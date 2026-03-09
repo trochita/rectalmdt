@@ -308,6 +308,13 @@
           </div>
         </div>
         <div class="field">
+          <label>¿Disponibilidad de RT de curso corto (SCRT 5×5Gy) en el centro?</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="scrtDisponible" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — disponible en el centro</div></div>
+            <div class="radio-option" data-field="scrtDisponible" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — no disponible en el centro</div></div>
+          </div>
+        </div>
+        <div class="field">
           <label>TC Tórax-Abdomen-Pelvis</label>
           <div class="radio-group">
             <div class="radio-option" data-field="tc" data-val="M0"><div class="radio-dot"></div><div class="label-text"><strong>M0</strong> — Sin metástasis</div></div>
@@ -700,17 +707,19 @@
     if(crmInv||t4b||t4a||(s.emvi==='positivo'&&(n2||crmInv||crmAmen))||gangliosLat||depositos){
       var fertilityQ = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento','¿Derivación a medicina reproductiva urgente?'] : [];
       var scrtOk = s.scrtDisponible !== 'no';
-      var esquemaMuyAlto, justMuyAlto, evidMuyAlto;
+      var esquemaMuyAlto, justMuyAlto, evidMuyAlto, mdtMuyAlto;
       if(scrtOk){
         esquemaMuyAlto = 'TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).';
         justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.';
         evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
+        mdtMuyAlto = ['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?','¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
       } else {
-        esquemaMuyAlto = '⭐ Estándar internacional: RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX)\n\n⚠️ SCRT no disponible en este centro. Opciones alternativas:\n▸ PRODIGE 23 — mFOLFIRINOX → LCRT (evidencia nivel 1, no requiere SCRT)\n▸ Derivación a centro con SCRT — si RAPIDO es claramente superior para este perfil\n▸ LCRT estándar — si PS limitado o no tolera FOLFIRINOX';
-        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO es el estándar internacional pero requiere SCRT (5×5Gy) no disponible en este centro. PRODIGE 23 (mFOLFIRINOX → LCRT) es la alternativa de nivel 1 sin necesidad de SCRT — resultados oncológicos equivalentes en MFS y DFS a 7 años. La derivación a centro con SCRT debe evaluarse según la situación del paciente. ⚠️ RAPIDO a 5 años: mayor recurrencia locorregional (10% vs 6%) vs CRT estándar.';
-        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
+        esquemaMuyAlto = '⭐ Estándar internacional: RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) — no disponible en este centro\n\n▸ OPCIÓN 1 — PRODIGE 23 (mFOLFIRINOX → LCRT)\n  Indicado cuando: objetivo es reducción de metástasis sistémicas. Evidencia nivel 1. No requiere SCRT.\n\n▸ OPCIÓN 2 — OPRA (LCRT → FOLFOX consolidante)\n  Indicado cuando: objetivo principal es preservación orgánica (W&W). No requiere SCRT.\n  Nota: no diseñado para reducir metástasis — objetivo diferente al RAPIDO.\n\n▸ OPCIÓN 3 — Derivación a centro con SCRT\n  Considerar cuando: múltiples factores de riesgo sistémico (N2 + EMVI+ + depósitos + CRM invadido), necesidad de inicio rápido, T4b con downstaging urgente, paciente no tolera FOLFIRINOX (CAPOX post-SCRT es más tolerable), o paciente con dificultad de RT larga (28 sesiones vs 5 sesiones SCRT).\n  NO derivar cuando: edad avanzada o comorbilidades que dificultan traslados, distancia >100km sin soporte social, tiempos de espera en centro de referencia >3-4 semanas.\n\n▸ OPCIÓN 4 — LCRT estándar\n  Indicado cuando: PS ≥2 o no tolera FOLFIRINOX ni CAPOX.';
+        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO es el estándar internacional (SCRT no disponible en este centro). PRODIGE 23 y OPRA son alternativas de evidencia nivel 1 sin necesidad de SCRT. La elección entre ellas depende del objetivo del MDT: reducción sistémica (PRODIGE 23) vs preservación orgánica (OPRA). La derivación a centro con SCRT debe evaluarse con criterios explícitos. ⚠️ RAPIDO 5 años: mayor recurrencia locorregional (10% vs 6%).';
+        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','OPRA JCO 2024','NCCN v1.2026','ESMO 2025'];
+        mdtMuyAlto = ['¿Objetivo del MDT: reducción sistémica (PRODIGE 23) o preservación orgánica (OPRA)?','¿Criterios de derivación presentes? (N2+EMVI++depósitos, T4b, no tolera FOLFOX, dificultad RT larga)','¿Criterios de NO derivación? (edad, distancia >100km, espera >3-4 sem en centro de referencia)','¿PRODIGE 23: ECOG 0-1 apto para mFOLFIRINOX?','¿OPRA: deseo de preservación orgánica confirmado?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
       }
-      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:esquemaMuyAlto,justificacion:justMuyAlto,evidencia:evidMuyAlto,ww:false,scrtNoDisponible:!scrtOk,mdtPreguntas:(scrtOk?['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?']:['¿PRODIGE 23 vs derivación a centro con SCRT?','¿Criterio de derivación: perfil del paciente, distancia, tiempos de espera?']).concat(['¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?']).concat(fertilityQ)};
+      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:esquemaMuyAlto,justificacion:justMuyAlto,evidencia:evidMuyAlto,ww:false,scrtNoDisponible:!scrtOk,mdtPreguntas:mdtMuyAlto.concat(fertilityQ)};
     }
     if((s.emvi==='positivo'||n2||t3cd||depositos)&&!(preservacion&&bajo&&!crmInv)&&fit){
       var fertilityQ2 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento'] : [];
