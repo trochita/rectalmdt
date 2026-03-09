@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RectalMDT</title>
+  <style>
+    :root {
+      --primary: #1a6bb5; --primary-dark: #0f4a80; --accent: #e8f4fd;
+      --danger: #c0392b; --warning: #e67e22; --success: #27ae60;
+      --purple: #7c3aed; --gray: #6c757d; --light: #f8f9fa;
+      --border: #dee2e6; --text: #212529; --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: var(--text); min-height: 100vh; }
+    header { background: var(--primary); color: white; padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    header p { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+    .progress-bar { background: rgba(255,255,255,0.2); height: 4px; margin-top: 10px; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: white; border-radius: 2px; transition: width 0.3s ease; }
+    .container { max-width: 700px; margin: 0 auto; padding: 20px 16px 80px; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .card { background: white; border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+    .card-title.purple { color: var(--purple); border-bottom-color: #ede9fe; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: #495057; margin-bottom: 6px; }
+    .field .hint { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
+    input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; color: var(--text); background: white; transition: border-color 0.2s; -webkit-appearance: none; appearance: none; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 80px; }
+    .radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-option, .checkbox-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .radio-option:hover, .checkbox-option:hover { border-color: var(--primary); background: var(--accent); }
+    .radio-option.selected, .checkbox-option.selected { border-color: var(--primary); background: var(--accent); }
+    .radio-option .label-text, .checkbox-option .label-text { font-size: 0.85rem; flex: 1; }
+    .radio-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .radio-option.selected .radio-dot { border-color: var(--primary); background: var(--primary); }
+    .radio-option.selected .radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; }
+    .checkbox-box { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .checkbox-option.selected .checkbox-box { border-color: var(--primary); background: var(--primary); }
+    .checkbox-option.selected .checkbox-box::after { content: '✓'; color: white; font-size: 0.7rem; font-weight: 700; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .nav-buttons { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px 16px; display: none; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
+    .btn { flex: 1; padding: 13px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--light); color: var(--text); border: 1.5px solid var(--border); flex: 0.5; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-purple { background: var(--purple); color: white; }
+    .ecog-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .ecog-item { border: 2px solid var(--border); border-radius: 8px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .ecog-item:hover { border-color: var(--primary); }
+    .ecog-item.selected { border-color: var(--primary); background: var(--accent); }
+    .ecog-item .ecog-num { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+    .ecog-item .ecog-desc { font-size: 0.62rem; color: var(--gray); margin-top: 4px; line-height: 1.3; }
+    .mrtrg-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .mrtrg-item { border: 2px solid var(--border); border-radius: 8px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .mrtrg-item:hover { border-color: var(--primary); }
+    .mrtrg-item.selected { border-color: var(--primary); background: var(--accent); }
+    .mrtrg-item .mrtrg-num { font-size: 1.4rem; font-weight: 700; }
+    .mrtrg-item .mrtrg-desc { font-size: 0.6rem; color: var(--gray); margin-top: 4px; line-height: 1.2; }
+    .mrtrg-1 .mrtrg-num { color: #27ae60; } .mrtrg-2 .mrtrg-num { color: #2ecc71; }
+    .mrtrg-3 .mrtrg-num { color: #e67e22; } .mrtrg-4 .mrtrg-num { color: #e74c3c; } .mrtrg-5 .mrtrg-num { color: #7b0000; }
+    .step-indicator { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+    .step-dot.active { background: var(--primary); transform: scale(1.3); }
+    .step-dot.done { background: var(--success); }
+    .section-subtitle { font-size: 0.78rem; color: var(--gray); margin-bottom: 16px; line-height: 1.4; }
+    .api-key-section { background: #fff8e1; border: 1.5px solid #ffc107; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+    .api-key-section label { font-size: 0.82rem; font-weight: 600; color: #7d4e00; display: block; margin-bottom: 6px; }
+    .home-screen { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+    .mode-card { background: white; border-radius: var(--radius); padding: 24px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; border: 2px solid transparent; transition: all 0.2s; display: flex; align-items: flex-start; gap: 16px; }
+    .mode-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .mode-card.purple-card:hover { border-color: var(--purple); }
+    .mode-icon { font-size: 2.2rem; flex-shrink: 0; }
+    .mode-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .mode-card.purple-card .mode-title { color: var(--purple); }
+    .mode-desc { font-size: 0.8rem; color: var(--gray); line-height: 1.4; }
+    .home-header { text-align: center; padding: 16px 0 8px; }
+    .home-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--primary-dark); }
+    .home-header p { font-size: 0.8rem; color: var(--gray); margin-top: 4px; }
+    .result-card { border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .result-header { font-size: 1rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+    .badge-low { background: #d4edda; color: #155724; } .badge-intermediate { background: #fff3cd; color: #856404; }
+    .badge-high { background: #fde8e8; color: #7b1111; } .badge-veryhigh { background: #2c1010; color: #ff8080; }
+    .badge-special { background: #e8d5f5; color: #4a1278; } .badge-ccr { background: #d4edda; color: #155724; }
+    .badge-near { background: #fff3cd; color: #856404; } .badge-partial { background: #fde8e8; color: #7b1111; }
+    .badge-noresp { background: #2c1010; color: #ff8080; }
+    .risk-low { background: #d4edda; border-left: 5px solid var(--success); }
+    .risk-intermediate { background: #fff3cd; border-left: 5px solid var(--warning); }
+    .risk-high { background: #fde8e8; border-left: 5px solid var(--danger); }
+    .risk-veryhigh { background: #f5d0d0; border-left: 5px solid #7b0000; }
+    .risk-special { background: #f0e6fa; border-left: 5px solid #7c3aed; }
+    .resp-ccr { background: #d4edda; border-left: 5px solid var(--success); }
+    .resp-near { background: #fff3cd; border-left: 5px solid var(--warning); }
+    .resp-partial { background: #fde8e8; border-left: 5px solid var(--danger); }
+    .resp-noresp { background: #f5d0d0; border-left: 5px solid #7b0000; }
+    .treatment-box { background: white; border-radius: 8px; padding: 14px; margin-top: 12px; }
+    .treatment-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--primary-dark); }
+    .treatment-desc { font-size: 0.82rem; color: #495057; line-height: 1.5; }
+    .evidence-tag { display: inline-block; background: #e8f4fd; color: var(--primary); font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 6px; margin-right: 4px; }
+    .mdt-questions { background: #fff8e1; border-radius: 8px; padding: 14px; margin-top: 12px; }
+    .mdt-questions h4 { font-size: 0.82rem; font-weight: 700; color: #7d4e00; margin-bottom: 10px; }
+    .mdt-questions ul { padding-left: 16px; }
+    .mdt-questions li { font-size: 0.8rem; color: #5d3a00; margin-bottom: 6px; line-height: 1.4; }
+    .alert { padding: 12px 14px; border-radius: 8px; font-size: 0.82rem; margin-top: 12px; display: flex; gap: 8px; align-items: flex-start; }
+    .alert-success { background: #d4edda; border-left: 4px solid var(--success); color: #155724; }
+    .alert-info { background: #e8f4fd; border-left: 4px solid var(--primary); color: #0c4a7a; }
+    .ai-section { background: linear-gradient(135deg, #1a6bb5, #0f4a80); border-radius: var(--radius); padding: 20px; color: white; margin-top: 16px; }
+    .ai-section h3 { font-size: 0.9rem; margin-bottom: 8px; }
+    .ai-response { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.6; }
+    .legal { font-size: 0.72rem; color: var(--gray); line-height: 1.5; margin-top: 16px; padding: 12px; background: white; border-radius: 8px; }
+    .btn-row { margin-top: 16px; display: flex; gap: 10px; }
+    @media (max-width: 400px) { .ecog-grid { grid-template-columns: repeat(3, 1fr); } .mrtrg-grid { grid-template-columns: repeat(3, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🩺 RectalMDT</h1>
+  <p id="headerSubtitle">Soporte de decisión — Cáncer de Recto</p>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</header>
+
+<div class="container">
+
+  <!-- HOME -->
+  <div id="homeScreen">
+    <div class="home-header">
+      <h2>RectalMDT</h2>
+      <p>Seleccioná el módulo que necesitás</p>
+    </div>
+    <div class="home-screen">
+      <div class="mode-card" id="btnInicial">
+        <div class="mode-icon">🔍</div>
+        <div>
+          <div class="mode-title">Evaluación Inicial</div>
+          <div class="mode-desc">Estadificación, RMN pre-tratamiento, paraclínica y decisión de esquema neoadyuvante. RAPIDO · PRODIGE 23 · OPRA · PROSPECT · Dostarlimab · Cirugía directa.</div>
+        </div>
+      </div>
+      <div class="mode-card purple-card" id="btnReeval">
+        <div class="mode-icon">🔄</div>
+        <div>
+          <div class="mode-title">Reevaluación Post-Neoadyuvancia</div>
+          <div class="mode-desc">Evaluación de respuesta al tratamiento. RMN (mrTRG + DWI), tacto rectal, endoscopía y CEA. Decisión: Watch &amp; Wait vs cirugía TME.</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
+  </div>
+
+  <!-- MÓDULO INICIAL -->
+  <div id="inicialModule" style="display:none">
+    <div class="step-indicator">
+      <div class="step-dot" id="idot0"></div>
+      <div class="step-dot" id="idot1"></div>
+      <div class="step-dot" id="idot2"></div>
+      <div class="step-dot" id="idot3"></div>
+      <div class="step-dot" id="idot4"></div>
+    </div>
+
+    <!-- I-0: Paciente -->
+    <div class="step" id="istep0">
+      <div class="card">
+        <div class="card-title">👤 Datos del Paciente</div>
+        <p class="section-subtitle">Sin datos identificatorios. Solo información clínica relevante para la decisión.</p>
+        <div class="grid-2">
+          <div class="field"><label>Edad (años)</label><input type="number" id="edad" min="18" max="100" placeholder="ej: 62" /></div>
+          <div class="field"><label>Sexo</label><select id="sexo" onchange="toggleParidad(this.value)"><option value="">Seleccionar</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
+        </div>
+        <div class="field" id="paridadField" style="display:none">
+          <label>Paridad</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="paridad" data-val="satisfecha"><div class="radio-dot"></div><div class="label-text">Paridad satisfecha</div></div>
+            <div class="radio-option" data-field="paridad" data-val="no_satisfecha"><div class="radio-dot"></div><div class="label-text">Paridad no satisfecha — deseo de fertilidad</div></div>
+            <div class="radio-option" data-field="paridad" data-val="no_aplica"><div class="radio-dot"></div><div class="label-text">No aplica (menopausia / histerectomía previa)</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>ECOG / Performance Status</label>
+          <div class="ecog-grid">
+            <div class="ecog-item" data-val="0"><div class="ecog-num">0</div><div class="ecog-desc">Activo normal</div></div>
+            <div class="ecog-item" data-val="1"><div class="ecog-num">1</div><div class="ecog-desc">Síntomas, ambulatorio</div></div>
+            <div class="ecog-item" data-val="2"><div class="ecog-num">2</div><div class="ecog-desc">En cama &lt;50% día</div></div>
+            <div class="ecog-item" data-val="3"><div class="ecog-num">3</div><div class="ecog-desc">En cama &gt;50% día</div></div>
+            <div class="ecog-item" data-val="4"><div class="ecog-num">4</div><div class="ecog-desc">Postrado total</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Estado MMR / MSI</label>
+          <div class="radio-group" id="mmrGroup">
+            <div class="radio-option" data-field="mmr" data-val="dMMR_MSI-H"><div class="radio-dot"></div><div class="label-text"><strong>dMMR / MSI-H</strong></div></div>
+            <div class="radio-option" data-field="mmr" data-val="pMMR_MSS"><div class="radio-dot"></div><div class="label-text"><strong>pMMR / MSS</strong></div></div>
+            <div class="radio-option" data-field="mmr" data-val="pendiente"><div class="radio-dot"></div><div class="label-text">Pendiente / No disponible</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Comorbilidades relevantes</label>
+          <div class="checkbox-group">
+            <div class="checkbox-option" data-val="diabetes"><div class="checkbox-box"></div><div class="label-text">Diabetes mellitus</div></div>
+            <div class="checkbox-option" data-val="cardio"><div class="checkbox-box"></div><div class="label-text">Enfermedad cardiovascular significativa</div></div>
+            <div class="checkbox-option" data-val="renal"><div class="checkbox-box"></div><div class="label-text">Insuficiencia renal (Cr &gt;1.5)</div></div>
+            <div class="checkbox-option" data-val="neuropatia"><div class="checkbox-box"></div><div class="label-text">Neuropatía periférica</div></div>
+            <div class="checkbox-option" data-val="ninguna"><div class="checkbox-box"></div><div class="label-text">Sin comorbilidades relevantes</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>¿El paciente desea preservar el órgano / evitar ostomía?</label>
+          <div class="radio-group" id="preservacionGroup">
+            <div class="radio-option" data-field="preservacion" data-val="si"><div class="radio-dot"></div><div class="label-text">Sí — deseo explícito de preservación</div></div>
+            <div class="radio-option" data-field="preservacion" data-val="no"><div class="radio-dot"></div><div class="label-text">No — acepta cirugía sin condición</div></div>
+            <div class="radio-option" data-field="preservacion" data-val="discutir"><div class="radio-dot"></div><div class="label-text">No discutido / indiferente</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- I-1: RMN -->
+    <div class="step" id="istep1">
+      <div class="card">
+        <div class="card-title">🧲 RMN Pelvis — Pre-tratamiento</div>
+        <div class="field"><label>Altura tumoral (cm del margen anal)</label><input type="number" id="altura" min="0" max="20" step="0.5" placeholder="ej: 4.5" /><div class="hint">Recto bajo: &lt;5cm | Medio: 5-10cm | Alto: &gt;10cm</div></div>
+        <div class="field">
+          <label>Estadio T clínico (cT)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="cT" data-val="cT1"><div class="radio-dot"></div><div class="label-text"><strong>cT1</strong> — Confinado a submucosa</div></div>
+            <div class="radio-option" data-field="cT" data-val="cT2"><div class="radio-dot"></div><div class="label-text"><strong>cT2</strong> — Invasión de muscular propia</div></div>
+            <div class="radio-option" data-field="cT" data-val="cT3a"><div class="radio-dot"></div><div class="label-text"><strong>cT3a/b</strong> — Extensión perirrectal ≤5mm</div></div>
+            <div class="radio-option" data-field="cT" data-val="cT3c"><div class="radio-dot"></div><div class="label-text"><strong>cT3c/d</strong> — Extensión perirrectal &gt;5mm</div></div>
+            <div class="radio-option" data-field="cT" data-val="cT4a"><div class="radio-dot"></div><div class="label-text"><strong>cT4a</strong> — Invasión de peritoneo visceral</div></div>
+            <div class="radio-option" data-field="cT" data-val="cT4b"><div class="radio-dot"></div><div class="label-text"><strong>cT4b</strong> — Invasión de órganos/estructuras adyacentes</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Estadio N clínico (cN)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="cN" data-val="N0"><div class="radio-dot"></div><div class="label-text"><strong>N0</strong> — Sin ganglios sospechosos</div></div>
+            <div class="radio-option" data-field="cN" data-val="N1"><div class="radio-dot"></div><div class="label-text"><strong>N1</strong> — 1-3 ganglios regionales sospechosos</div></div>
+            <div class="radio-option" data-field="cN" data-val="N2"><div class="radio-dot"></div><div class="label-text"><strong>N2</strong> — ≥4 ganglios regionales sospechosos</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>CRM (Margen de Resección Circunferencial)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="crm" data-val="libre"><div class="radio-dot"></div><div class="label-text"><strong>Libre</strong> — &gt;1mm de la fascia mesorrectal</div></div>
+            <div class="radio-option" data-field="crm" data-val="amenazado"><div class="radio-dot"></div><div class="label-text"><strong>Amenazado</strong> — ≤1mm de la fascia</div></div>
+            <div class="radio-option" data-field="crm" data-val="invadido"><div class="radio-dot"></div><div class="label-text"><strong>Invadido</strong> — Tumor alcanza o supera la fascia</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>EMVI (Invasión Vascular Extramural)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="emvi" data-val="negativo"><div class="radio-dot"></div><div class="label-text">Negativo</div></div>
+            <div class="radio-option" data-field="emvi" data-val="sospechoso"><div class="radio-dot"></div><div class="label-text">Sospechoso</div></div>
+            <div class="radio-option" data-field="emvi" data-val="positivo"><div class="radio-dot"></div><div class="label-text">Positivo</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- I-2: Paraclínica -->
+    <div class="step" id="istep2">
+      <div class="card">
+        <div class="card-title">📐 Características adicionales</div>
+        <div class="grid-2">
+          <div class="field"><label>Tamaño tumoral (cm)</label><input type="number" id="tamano" min="0" max="15" step="0.5" placeholder="ej: 4.0" /></div>
+          <div class="field"><label>Circunferencia</label><select id="circunferencia"><option value="">Seleccionar</option><option value="<25">&lt;25%</option><option value="25-50">25-50%</option><option value="50-75">50-75%</option><option value=">75">&gt;75%</option></select></div>
+        </div>
+        <div class="field">
+          <label>Ganglios laterales / ilíacos</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="gangliosLaterales" data-val="no"><div class="radio-dot"></div><div class="label-text">No sospechosos</div></div>
+            <div class="radio-option" data-field="gangliosLaterales" data-val="sospechoso"><div class="radio-dot"></div><div class="label-text"><strong>Ilíacos internos</strong> sospechosos (≥8mm, morfología anormal) — N lateral</div></div>
+            <div class="radio-option" data-field="gangliosLaterales" data-val="iliaco_externo"><div class="radio-dot"></div><div class="label-text"><strong>Ilíacos externos o comunes</strong> sospechosos — equivale a M1c</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Depósitos tumorales en mesorrecto</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="depositos" data-val="no"><div class="radio-dot"></div><div class="label-text">No</div></div>
+            <div class="radio-option" data-field="depositos" data-val="si"><div class="radio-dot"></div><div class="label-text">Sí</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔬 Paraclínica y Examen Físico</div>
+        <div class="grid-2">
+          <div class="field"><label>CEA basal (ng/mL)</label><input type="number" id="cea" min="0" step="0.1" placeholder="ej: 5.2" /></div>
+          <div class="field"><label>Distancia margen anal (cm)</label><input type="number" id="distanciaDRE" min="0" max="20" step="0.5" placeholder="cm" /></div>
+        </div>
+        <div class="field">
+          <label>Tacto rectal (DRE)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="dre" data-val="movil"><div class="radio-dot"></div><div class="label-text">Tumor móvil</div></div>
+            <div class="radio-option" data-field="dre" data-val="parcial"><div class="radio-dot"></div><div class="label-text">Parcialmente fijo</div></div>
+            <div class="radio-option" data-field="dre" data-val="fijo"><div class="radio-dot"></div><div class="label-text">Fijo</div></div>
+            <div class="radio-option" data-field="dre" data-val="no_alcanzable"><div class="radio-dot"></div><div class="label-text">No alcanzable</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>TC Tórax-Abdomen-Pelvis</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="tc" data-val="M0"><div class="radio-dot"></div><div class="label-text"><strong>M0</strong> — Sin metástasis</div></div>
+            <div class="radio-option" data-field="tc" data-val="M1_indeterminado"><div class="radio-dot"></div><div class="label-text"><strong>Lesión indeterminada</strong> — Requiere RM hepática / PET-CT / biopsia antes de decidir</div></div>
+            <div class="radio-option" data-field="tc" data-val="M1_hepatico"><div class="radio-dot"></div><div class="label-text"><strong>M1a hepático</strong> — Metástasis hepáticas (potencialmente resecables)</div></div>
+            <div class="radio-option" data-field="tc" data-val="M1_nodulo_pulmonar"><div class="radio-dot"></div><div class="label-text"><strong>M1a pulmonar — Nódulo solitario</strong> ≤3 cm resecable (SBRT / cirugía / ablación)</div></div>
+            <div class="radio-option" data-field="tc" data-val="M1_pulmonar"><div class="radio-dot"></div><div class="label-text"><strong>M1a pulmonar</strong> — Múltiples metástasis pulmonares resecables</div></div>
+            <div class="radio-option" data-field="tc" data-val="M1_multiple"><div class="radio-dot"></div><div class="label-text"><strong>M1b/c</strong> — Metástasis múltiples / irresecables</div></div>
+          </div>
+        </div>
+        <div class="field"><label>Observaciones (opcional)</label><textarea id="observaciones" placeholder="Sincrónicas, complicaciones, otros hallazgos..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- I-3: Resumen + API -->
+    <div class="step" id="istep3">
+      <div class="card">
+        <div class="card-title">🤖 Análisis con IA (opcional)</div>
+        <div class="api-key-section">
+          <label>🔑 API Key de OpenAI</label>
+          <input type="text" id="apiKey" placeholder="sk-..." style="font-family:monospace;font-size:0.8rem" />
+          <div class="hint" style="margin-top:6px">Opcional. Sin API Key el análisis por reglas funciona igual.</div>
+        </div>
+        <div class="alert alert-info">ℹ️ Datos clínicos sin identificadores. Soporte de decisión — la responsabilidad clínica es del médico tratante.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Resumen del caso</div>
+        <div id="summaryContent" style="font-size:0.85rem;line-height:1.6;color:#495057"></div>
+      </div>
+    </div>
+
+    <!-- I-4: Resultado -->
+    <div class="step" id="istep4"><div id="resultsContainer"></div></div>
+  </div>
+
+  <!-- MÓDULO REEVALUACIÓN -->
+  <div id="reevalModule" style="display:none">
+    <div class="step-indicator">
+      <div class="step-dot" id="rdot0"></div>
+      <div class="step-dot" id="rdot1"></div>
+      <div class="step-dot" id="rdot2"></div>
+      <div class="step-dot" id="rdot3"></div>
+    </div>
+
+    <!-- R-0: Contexto -->
+    <div class="step" id="rstep0">
+      <div class="card">
+        <div class="card-title purple">🔄 Contexto del Tratamiento</div>
+        <div class="field">
+          <label>Esquema neoadyuvante recibido</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="esquemaRecibido" data-val="lcrt"><div class="radio-dot"></div><div class="label-text"><strong>LCRT estándar</strong> — 50.4Gy + capecitabina</div></div>
+            <div class="radio-option" data-field="esquemaRecibido" data-val="tnt_prodige"><div class="radio-dot"></div><div class="label-text"><strong>TNT — PRODIGE 23</strong> — mFOLFIRINOX → LCRT</div></div>
+            <div class="radio-option" data-field="esquemaRecibido" data-val="tnt_opra"><div class="radio-dot"></div><div class="label-text"><strong>TNT — OPRA (CNCT)</strong> — LCRT → FOLFOX consolidante</div></div>
+            <div class="radio-option" data-field="esquemaRecibido" data-val="rapido"><div class="radio-dot"></div><div class="label-text"><strong>RAPIDO</strong> — SCRT (5×5Gy) + CAPOX/FOLFOX</div></div>
+            <div class="radio-option" data-field="esquemaRecibido" data-val="dostarlimab"><div class="radio-dot"></div><div class="label-text"><strong>Dostarlimab</strong> — Inmunoterapia (dMMR/MSI-H)</div></div>
+            <div class="radio-option" data-field="esquemaRecibido" data-val="prospect_folfox"><div class="radio-dot"></div><div class="label-text"><strong>PROSPECT</strong> — FOLFOX neoadyuvante ± CRT selectiva</div></div>
+          </div>
+        </div>
+        <div class="field"><label>Semanas desde fin del tratamiento</label><select id="semanasPost"><option value="">Seleccionar</option><option value="<8">Menos de 8 semanas</option><option value="8-12">8-12 semanas</option><option value="12-16">12-16 semanas</option><option value="16-24">16-24 semanas</option><option value="24-34">24-34 semanas</option><option value=">34">Más de 34 semanas</option></select><div class="hint">LCRT: óptimo 12-16 sem · RAPIDO: 8-24 sem · PRODIGE 23/OPRA: 24-34 sem · Dostarlimab: 6 meses</div></div>
+        <div class="field"><label>CEA post-tratamiento (ng/mL)</label><input type="number" id="ceaPost" min="0" step="0.1" placeholder="ej: 1.8" /></div>
+        <div class="field" id="prospectRespField" style="display:none">
+          <label>Respuesta tumoral post-FOLFOX (RMN comparativa)</label>
+          <div class="hint" style="margin-bottom:8px">Comparar RMN post-FOLFOX vs RMN basal. Criterio PROSPECT: reducción ≥20% en volumen o dimensión mayor.</div>
+          <div class="radio-group">
+            <div class="radio-option" data-field="prospectResp" data-val="resp_buena"><div class="radio-dot"></div><div class="label-text"><strong>Respuesta ≥20%</strong> — Reducción significativa (mrTRG 1-3 y/o ↓≥20%)</div></div>
+            <div class="radio-option" data-field="prospectResp" data-val="resp_insuf"><div class="radio-dot"></div><div class="label-text"><strong>Respuesta &lt;20%</strong> — Reducción insuficiente (mrTRG 4-5 o ↓&lt;20%)</div></div>
+            <div class="radio-option" data-field="prospectResp" data-val="resp_pendiente"><div class="radio-dot"></div><div class="label-text">RMN comparativa pendiente / no disponible</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>¿El objetivo era preservación orgánica (W&amp;W)?</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="objetivoTto" data-val="ww"><div class="radio-dot"></div><div class="label-text">Sí — W&amp;W era el objetivo si hay cCR</div></div>
+            <div class="radio-option" data-field="objetivoTto" data-val="cirugia"><div class="radio-dot"></div><div class="label-text">No — cirugía planificada independientemente</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- R-1: RMN + DRE post -->
+    <div class="step" id="rstep1">
+      <div class="card">
+        <div class="card-title purple">🧲 RMN Post-Neoadyuvancia</div>
+        <div class="field">
+          <label>mrTRG — MRI Tumor Regression Grade</label>
+          <div class="mrtrg-grid">
+            <div class="mrtrg-item mrtrg-1" data-val="1"><div class="mrtrg-num">1</div><div class="mrtrg-desc">Fibrosis completa. Sin señal tumoral</div></div>
+            <div class="mrtrg-item mrtrg-2" data-val="2"><div class="mrtrg-num">2</div><div class="mrtrg-desc">Fibrosis densa. Tumor mínimo</div></div>
+            <div class="mrtrg-item mrtrg-3" data-val="3"><div class="mrtrg-num">3</div><div class="mrtrg-desc">Fibrosis y tumor similares</div></div>
+            <div class="mrtrg-item mrtrg-4" data-val="4"><div class="mrtrg-num">4</div><div class="mrtrg-desc">Tumor predominante</div></div>
+            <div class="mrtrg-item mrtrg-5" data-val="5"><div class="mrtrg-num">5</div><div class="mrtrg-desc">Sin respuesta</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>DWI (Difusión)</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="dwi" data-val="negativo"><div class="radio-dot"></div><div class="label-text"><strong>Negativo</strong> — Sin restricción residual</div></div>
+            <div class="radio-option" data-field="dwi" data-val="minimo"><div class="radio-dot"></div><div class="label-text"><strong>Mínimo</strong> — Restricción leve</div></div>
+            <div class="radio-option" data-field="dwi" data-val="moderado"><div class="radio-dot"></div><div class="label-text"><strong>Moderado</strong> — Sospechoso de tumor viable</div></div>
+            <div class="radio-option" data-field="dwi" data-val="marcado"><div class="radio-dot"></div><div class="label-text"><strong>Marcado</strong> — Tumor viable probable</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>CRM post-tratamiento</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="crmPost" data-val="libre"><div class="radio-dot"></div><div class="label-text">Libre (&gt;1mm)</div></div>
+            <div class="radio-option" data-field="crmPost" data-val="amenazado"><div class="radio-dot"></div><div class="label-text">Amenazado (≤1mm)</div></div>
+            <div class="radio-option" data-field="crmPost" data-val="invadido"><div class="radio-dot"></div><div class="label-text">Invadido</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Ganglios post-tratamiento</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="gangliosPost" data-val="normalizados"><div class="radio-dot"></div><div class="label-text">Normalizados o desaparecidos</div></div>
+            <div class="radio-option" data-field="gangliosPost" data-val="reducidos"><div class="radio-dot"></div><div class="label-text">Reducidos con morfología anormal residual</div></div>
+            <div class="radio-option" data-field="gangliosPost" data-val="persistentes"><div class="radio-dot"></div><div class="label-text">Persistentes sin cambios</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title purple">🖐️ Tacto Rectal Post-Neoadyuvancia</div>
+        <div class="field">
+          <label>Hallazgos al tacto rectal</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="drePost" data-val="normal"><div class="radio-dot"></div><div class="label-text">Normal — Sin masa palpable</div></div>
+            <div class="radio-option" data-field="drePost" data-val="cicatriz"><div class="radio-dot"></div><div class="label-text">Cicatriz palpable — Induración fibrosa</div></div>
+            <div class="radio-option" data-field="drePost" data-val="masa_residual"><div class="radio-dot"></div><div class="label-text">Masa residual — Tumor palpable</div></div>
+            <div class="radio-option" data-field="drePost" data-val="no_alcanzable"><div class="radio-dot"></div><div class="label-text">No alcanzable</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Fijación</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="fijacionPost" data-val="movil"><div class="radio-dot"></div><div class="label-text">Móvil</div></div>
+            <div class="radio-option" data-field="fijacionPost" data-val="parcial"><div class="radio-dot"></div><div class="label-text">Parcialmente fijo</div></div>
+            <div class="radio-option" data-field="fijacionPost" data-val="fijo"><div class="radio-dot"></div><div class="label-text">Fijo</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- R-2: Endoscopía -->
+    <div class="step" id="rstep2">
+      <div class="card">
+        <div class="card-title purple">🔭 Endoscopía Post-Neoadyuvancia</div>
+        <div class="field">
+          <label>Hallazgos endoscópicos</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="endoPost" data-val="cicatriz_plana"><div class="radio-dot"></div><div class="label-text"><strong>Cicatriz plana blanquecina</strong> — sin masa, sin ulceración activa <span style="color:var(--success);font-weight:700">→ cCR</span></div></div>
+            <div class="radio-option" data-field="endoPost" data-val="ulcera_superficial"><div class="radio-dot"></div><div class="label-text"><strong>Úlcera superficial (&lt;2cm)</strong> — sin masa subyacente <span style="color:var(--warning);font-weight:700">→ nCR</span></div></div>
+            <div class="radio-option" data-field="endoPost" data-val="ulcera_irregular"><div class="radio-dot"></div><div class="label-text"><strong>Úlcera irregular o profunda</strong> — bordes indurados <span style="color:var(--danger);font-weight:700">→ Tumor residual probable</span></div></div>
+            <div class="radio-option" data-field="endoPost" data-val="masa_visible"><div class="radio-dot"></div><div class="label-text"><strong>Masa visible</strong> <span style="color:#7b0000;font-weight:700">→ No respuesta</span></div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Biopsia del sitio tumoral</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="biopsiaPost" data-val="negativa"><div class="radio-dot"></div><div class="label-text">Negativa para malignidad</div></div>
+            <div class="radio-option" data-field="biopsiaPost" data-val="positiva"><div class="radio-dot"></div><div class="label-text">Positiva — tumor residual confirmado</div></div>
+            <div class="radio-option" data-field="biopsiaPost" data-val="no_realizada"><div class="radio-dot"></div><div class="label-text">No realizada</div></div>
+          </div>
+          <div class="hint">Biopsia negativa NO excluye tumor submucoso.</div>
+        </div>
+        <div class="field"><label>Observaciones (opcional)</label><textarea id="obsReeval" placeholder="Distancia al margen anal, otros hallazgos..."></textarea></div>
+      </div>
+      <div class="card">
+        <div class="card-title purple">📋 Resumen de reevaluación</div>
+        <div id="reevalSummary" style="font-size:0.85rem;line-height:1.6;color:#495057"></div>
+      </div>
+    </div>
+
+    <!-- R-3: Resultado -->
+    <div class="step" id="rstep3"><div id="reevalResultsContainer"></div></div>
+  </div>
+
+</div>
+
+<div class="nav-buttons" id="navButtons">
+  <button class="btn btn-secondary" id="btnBack">← Atrás</button>
+  <button class="btn btn-primary" id="btnNext">Continuar →</button>
+  <button class="btn btn-success" id="btnAnalyze" style="display:none">🧠 Analizar</button>
+  <button class="btn btn-purple" id="btnAnalyzeReeval" style="display:none">🔄 Evaluar Respuesta</button>
+</div>
+
+<script>
+  var mode = null;
+  var currentStep = 0;
+  var state = {
+    edad:null,sexo:null,ecog:null,mmr:null,comorbilidades:[],preservacion:null,
+    cT:null,cN:null,crm:null,emvi:null,altura:null,tamano:null,circunferencia:null,
+    gangliosLaterales:null,depositos:null,cea:null,distanciaDRE:null,dre:null,
+    tc:null,observaciones:'',apiKey:null,
+    paridad:null,
+    esquemaRecibido:null,semanasPost:null,ceaPost:null,objetivoTto:null,prospectResp:null,
+    mrtrg:null,dwi:null,crmPost:null,gangliosPost:null,
+    drePost:null,fijacionPost:null,endoPost:null,biopsiaPost:null,obsReeval:''
+  };
+
+  document.getElementById('btnInicial').addEventListener('click', function(){ startMode('inicial'); });
+  document.getElementById('btnReeval').addEventListener('click', function(){ startMode('reeval'); });
+  document.getElementById('btnBack').addEventListener('click', goBack);
+  document.getElementById('btnNext').addEventListener('click', goNext);
+  document.getElementById('btnAnalyze').addEventListener('click', runAnalysis);
+  document.getElementById('btnAnalyzeReeval').addEventListener('click', runReevalAnalysis);
+
+  function toggleParidad(val){
+    document.getElementById('paridadField').style.display = (val==='F') ? 'block' : 'none';
+    if(val!=='F') state.paridad = null;
+  }
+
+  document.querySelectorAll('.radio-option[data-field]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var field = el.dataset.field;
+      var val = el.dataset.val;
+      state[field] = val;
+      el.closest('.radio-group').querySelectorAll('.radio-option').forEach(function(o){ o.classList.remove('selected'); });
+      el.classList.add('selected');
+      if(field === 'esquemaRecibido'){
+        document.getElementById('prospectRespField').style.display = (val === 'prospect_folfox') ? 'block' : 'none';
+        if(val !== 'prospect_folfox') state.prospectResp = null;
+      }
+    });
+  });
+
+  document.querySelectorAll('.checkbox-option[data-val]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var val = el.dataset.val;
+      el.classList.toggle('selected');
+      if(el.classList.contains('selected')){ if(!state.comorbilidades.includes(val)) state.comorbilidades.push(val); }
+      else { state.comorbilidades = state.comorbilidades.filter(function(v){ return v !== val; }); }
+    });
+  });
+
+  document.querySelectorAll('.ecog-item').forEach(function(el){
+    el.addEventListener('click', function(){
+      state.ecog = parseInt(el.dataset.val);
+      document.querySelectorAll('.ecog-item').forEach(function(e){ e.classList.remove('selected'); });
+      el.classList.add('selected');
+    });
+  });
+
+  document.querySelectorAll('.mrtrg-item').forEach(function(el){
+    el.addEventListener('click', function(){
+      state.mrtrg = parseInt(el.dataset.val);
+      document.querySelectorAll('.mrtrg-item').forEach(function(e){ e.classList.remove('selected'); });
+      el.classList.add('selected');
+    });
+  });
+
+  function startMode(m) {
+    mode = m;
+    currentStep = 0;
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('inicialModule').style.display = 'none';
+    document.getElementById('reevalModule').style.display = 'none';
+    var modId = m === 'inicial' ? 'inicialModule' : 'reevalModule';
+    document.getElementById(modId).style.display = 'block';
+    document.getElementById('headerSubtitle').textContent = m === 'inicial' ? 'Evaluación Inicial' : 'Reevaluación Post-Neoadyuvancia';
+    document.querySelectorAll('#' + modId + ' .step').forEach(function(s, i){ s.classList.toggle('active', i === 0); });
+    updateNav();
+    updateDots();
+    updateProgress();
+    window.scrollTo(0,0);
+  }
+
+  function goHome() {
+    mode = null; currentStep = 0;
+    document.getElementById('homeScreen').style.display = 'block';
+    document.getElementById('inicialModule').style.display = 'none';
+    document.getElementById('reevalModule').style.display = 'none';
+    document.getElementById('headerSubtitle').textContent = 'Soporte de decisión — Cáncer de Recto';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('navButtons').style.display = 'none';
+  }
+
+  function showStep(n) {
+    var modId = mode === 'inicial' ? 'inicialModule' : 'reevalModule';
+    document.querySelectorAll('#' + modId + ' .step').forEach(function(s,i){ s.classList.toggle('active', i === n); });
+    currentStep = n;
+    if(mode === 'inicial' && n === 3) buildSummary();
+    if(mode === 'reeval' && n === 2) buildReevalSummary();
+    updateNav(); updateDots(); updateProgress();
+    window.scrollTo(0,0);
+  }
+
+  function goNext() {
+    collectStep();
+    var last = mode === 'inicial' ? 3 : 2;
+    if(currentStep < last) showStep(currentStep + 1);
+  }
+
+  function goBack() {
+    if(currentStep === 0){ goHome(); return; }
+    showStep(currentStep - 1);
+  }
+
+  function updateNav() {
+    if(!mode){ document.getElementById('navButtons').style.display = 'none'; return; }
+    document.getElementById('navButtons').style.display = 'flex';
+    var lastData = mode === 'inicial' ? 3 : 2;
+    var resultStep = mode === 'inicial' ? 4 : 3;
+    var isResult = currentStep === resultStep;
+    var isLast = currentStep === lastData;
+    document.getElementById('btnNext').style.display = (isResult || isLast) ? 'none' : 'flex';
+    document.getElementById('btnAnalyze').style.display = (mode === 'inicial' && isLast) ? 'flex' : 'none';
+    document.getElementById('btnAnalyzeReeval').style.display = (mode === 'reeval' && isLast) ? 'flex' : 'none';
+  }
+
+  function updateDots() {
+    if(!mode) return;
+    var prefix = mode === 'inicial' ? 'idot' : 'rdot';
+    var total = mode === 'inicial' ? 5 : 4;
+    for(var i=0;i<total;i++){
+      var dot = document.getElementById(prefix+i);
+      if(!dot) continue;
+      dot.classList.remove('active','done');
+      if(i < currentStep) dot.classList.add('done');
+      else if(i === currentStep) dot.classList.add('active');
+    }
+  }
+
+  function updateProgress() {
+    if(!mode){ document.getElementById('progressFill').style.width='0%'; return; }
+    var total = mode === 'inicial' ? 5 : 4;
+    document.getElementById('progressFill').style.width = ((currentStep+1)/total*100) + '%';
+  }
+
+  function collectStep() {
+    if(mode === 'inicial'){
+      if(currentStep===0){ state.edad=document.getElementById('edad').value; state.sexo=document.getElementById('sexo').value; }
+      if(currentStep===1){ state.altura=document.getElementById('altura').value; }
+      if(currentStep===2){ state.tamano=document.getElementById('tamano').value; state.circunferencia=document.getElementById('circunferencia').value; state.cea=document.getElementById('cea').value; state.distanciaDRE=document.getElementById('distanciaDRE').value; state.observaciones=document.getElementById('observaciones').value; }
+      if(currentStep===3){ state.apiKey=document.getElementById('apiKey').value.trim(); }
+    }
+    if(mode === 'reeval'){
+      if(currentStep===0){ state.semanasPost=document.getElementById('semanasPost').value; state.ceaPost=document.getElementById('ceaPost').value; }
+      if(currentStep===2){ state.obsReeval=document.getElementById('obsReeval').value; }
+    }
+  }
+
+  function buildSummary() {
+    collectStep();
+    var s=state, lines=[];
+    if(s.edad) lines.push('Edad: '+s.edad+' | Sexo: '+(s.sexo||'NE')+' | ECOG: '+(s.ecog!=null?s.ecog:'NE'));
+    if(s.mmr) lines.push('MMR/MSI: '+s.mmr);
+    if(s.preservacion) lines.push('Preservación: '+s.preservacion);
+    if(s.altura) lines.push('Altura: '+s.altura+' cm');
+    if(s.cT) lines.push('Estadio: '+s.cT+' | '+(s.cN||'N-NE'));
+    if(s.crm) lines.push('CRM: '+s.crm);
+    if(s.emvi) lines.push('EMVI: '+s.emvi);
+    if(s.tc) lines.push('TC TAP: '+s.tc);
+    if(s.cea) lines.push('CEA: '+s.cea+' ng/mL');
+    if(s.dre) lines.push('DRE: '+s.dre);
+    document.getElementById('summaryContent').innerHTML = lines.map(function(l){ return '• '+l; }).join('<br>') || 'Completá los pasos anteriores.';
+  }
+
+  function buildReevalSummary() {
+    collectStep();
+    var s=state, lines=[];
+    if(s.esquemaRecibido) lines.push('Esquema: '+s.esquemaRecibido);
+    if(s.prospectResp) lines.push('Respuesta PROSPECT: '+s.prospectResp);
+    if(s.semanasPost) lines.push('Semanas post-tto: '+s.semanasPost);
+    if(s.ceaPost) lines.push('CEA post: '+s.ceaPost+' ng/mL');
+    if(s.mrtrg) lines.push('mrTRG: '+s.mrtrg);
+    if(s.dwi) lines.push('DWI: '+s.dwi);
+    if(s.crmPost) lines.push('CRM post: '+s.crmPost);
+    if(s.drePost) lines.push('DRE post: '+s.drePost);
+    if(s.endoPost) lines.push('Endoscopía: '+s.endoPost);
+    if(s.biopsiaPost) lines.push('Biopsia: '+s.biopsiaPost);
+    document.getElementById('reevalSummary').innerHTML = lines.map(function(l){ return '• '+l; }).join('<br>') || 'Completá los pasos anteriores.';
+  }
+
+  function analyzeRules() {
+    var s=state;
+    if(s.mmr==='dMMR_MSI-H') return {riesgo:'special',riesgoLabel:'dMMR / MSI-H',esquema:'Checkpoint inhibitor neoadyuvante (dostarlimab u otros — 6 meses)',justificacion:'Tumor con déficit de reparación de DNA. Cercek NEJM 2022: 100% cCR en 12/12 pacientes con dostarlimab. Opciones validadas: dostarlimab, nivolumab, pembrolizumab, cemiplimab (NCCN v1.2026). No debe recibir QRT convencional como primera línea en dMMR.',evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],ww:true,mdtPreguntas:['¿Confirmación IHQ/PCR dMMR/MSI-H?','¿Ausencia mutación BRAF V600E?','¿Disponibilidad del checkpoint inhibitor elegido?','¿Candidato a W&W si logra cCR?','¿Plan de seguimiento cada 3 meses (RMN + endoscopía)?']};
+    if(s.tc==='M1_indeterminado') return {riesgo:'veryhigh',riesgoLabel:'Lesión a distancia indeterminada',esquema:'Completar estadificación antes de iniciar tratamiento',justificacion:'Lesión de naturaleza incierta en TC. NCCN v1.2026 recomienda RM hepática con agente hepatobiliar (Eovist/Primovist) para lesiones hepáticas dudosas, PET-CT para sospecha sistémica, o biopsia guiada si necesario. No iniciar neoadyuvancia hasta definir estadio.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿RM hepática con agente hepatobiliar?','¿PET-CT si sospecha extrahepática?','¿Biopsia guiada de lesión dudosa?','¿Timing: completar estadificación antes de semana 2?']};
+    if(s.tc==='M1_multiple'||s.gangliosLaterales==='iliaco_externo') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 irresecables / M1c ganglionar',esquema:'Quimioterapia sistémica paliativa ± RT sintomática',justificacion:s.gangliosLaterales==='iliaco_externo'?'Ganglios ilíacos externos o comunes sospechosos = M1c (fuera del campo linfático primario del recto). Manejo sistémico. Cirugía con intención curativa no indicada de entrada.':'Enfermedad metastásica irresecable. Objetivo paliativo/conversión. FOLFOX/FOLFIRI ± bevacizumab o cetuximab/panitumumab según RAS/BRAF.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Estado mutacional RAS/BRAF/HER2/MSI?','¿Confirmar ilíacos externos con PET-CT?','¿Síntomas del primario que requieran RT local?','¿Objetivo: paliativo vs conversión a resecabilidad?']};
+    if(s.tc==='M1_nodulo_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'M1a — Nódulo pulmonar solitario resecable',esquema:'MDT multidisciplinario: SBRT / cirugía torácica / ablación térmica + manejo del primario rectal',justificacion:'Nódulo pulmonar solitario resecable. NCCN v1.2026 (REC-C/REC-E): SBRT, resección quirúrgica y ablación térmica son opciones equivalentes en lesiones ≤3cm. Pronóstico mejor que M1 hepático múltiple. Puede tratarse con intención curativa simultánea o staged.',evidencia:['NCCN v1.2026 REC-C/REC-E','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Evaluación por cirujano torácico o radioterapeuta para SBRT?','¿Confirmar naturaleza maligna del nódulo (PET-CT)?','¿Secuencia: primario rectal primero o sincrónico?','¿Reserva funcional pulmonar?','¿Lesión en localización accesible para ablación?']};
+    if(s.tc==='M1_hepatico'||s.tc==='M1_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 potencialmente resecables',esquema:'QT sistémica de inducción (FOLFOX/FOLFIRINOX) → reevaluar resecabilidad → cirugía staged o simultánea',justificacion:'Oligometástasis potencialmente resecable. NCCN v1.2026: QT de inducción para confirmar biología favorable y facilitar resección. FOLFIRINOX como opción en pacientes aptos. Puede tratarse con intención curativa.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Resecabilidad evaluada por cirujano hepático/torácico?','¿Número y localización de metástasis?','¿Secuencia: primario vs metástasis (staged vs simultáneo)?','¿RAS/BRAF/MSI/HER2?','¿FOLFIRINOX vs FOLFOX según estado físico?']};
+    if((s.cT==='cT1'||s.cT==='cT2')&&s.cN==='N0'&&s.crm==='libre'&&(s.emvi==='negativo'||!s.emvi)){
+      var fertilityQLow = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir implicancias de la cirugía sobre función reproductiva'] : [];
+      return {riesgo:'low',riesgoLabel:'Riesgo Bajo',esquema:s.cT==='cT1'?'TEM/TAMIS si criterios favorables — o TME':'Cirugía primaria (TME) sin neoadyuvancia',justificacion:s.cT==='cT1'?'cT1N0 CRM libre. Si criterios favorables (bien diferenciado, sin invasión linfovascular) TEM/TAMIS válido.':'cT2N0 CRM libre sin EMVI. Recurrencia local <5% con TME. No requiere neoadyuvancia. NCCN v1.2026: perfilado molecular post-cirugía — si PIK3CA alterado → aspirina 100-162mg/día × 3 años.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:['¿Grado de diferenciación?','¿Invasión linfovascular en biopsia?','¿Abordaje: laparoscópico/robótico/abierto?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF)?'].concat(fertilityQLow)};
+    }
+    var crmInv=s.crm==='invadido', crmAmen=s.crm==='amenazado', n2=s.cN==='N2', t4b=s.cT==='cT4b', t4a=s.cT==='cT4a', t3cd=s.cT==='cT3c';
+    var gangliosLat=s.gangliosLaterales==='sospechoso', depositos=s.depositos==='si';
+    var fit=s.ecog!=null&&s.ecog<=1&&!s.comorbilidades.includes('neuropatia')&&!s.comorbilidades.includes('renal');
+    var preservacion=s.preservacion==='si';
+    var bajo=parseFloat(s.altura)<5;
+    if(crmInv||t4b||t4a||(s.emvi==='positivo'&&(n2||crmInv||crmAmen))||gangliosLat||depositos){
+      var fertilityQ = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento','¿Derivación a medicina reproductiva urgente?'] : [];
+      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:'TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).',justificacion:'Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.',evidencia:['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?','¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'].concat(fertilityQ)};
+    }
+    if((s.emvi==='positivo'||n2||t3cd||depositos)&&!(preservacion&&bajo&&!crmInv)&&fit){
+      var fertilityQ2 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento'] : [];
+      return {riesgo:'high',riesgoLabel:'Riesgo Alto',esquema:'PRODIGE 23 — mFOLFIRINOX × 6c → LCRT → TME → FOLFOX. FOLFIRINOX como alternativa TNT (NCCN v1.2026).',justificacion:'Alto riesgo sistémico. PRODIGE 23 (7 años): MFS 81.6% vs 73.5%, DFS 75.7% vs 68.5%. Quimio inductora ataca micrometástasis. NCCN v1.2026 también reconoce FOLFIRINOX como opción en TNT de inducción o consolidación.',evidencia:['PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿PS 0-1 para FOLFIRINOX?','¿Sin neuropatía periférica preexistente?','¿Función hepática/renal?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'].concat(fertilityQ2)};
+    }
+    if(preservacion&&bajo&&!crmInv)
+      return {riesgo:'high',riesgoLabel:'Riesgo Alto — Candidato a Preservación',esquema:'OPRA (CNCT) — LCRT → FOLFOX consolidante → cCR? → W&W o TME',justificacion:'Recto bajo con deseo de preservación. OPRA (5 años): 50% preservación orgánica. En cCR: 77% a 3 años. Regrowth: 23-25%, rescatable en >90%.',evidencia:['OPRA JCO 2024','IWWD 793 pts','NCCN v3.2024','ESMO 2025'],ww:true,mdtPreguntas:['¿Equipo capacitado para W&W?','¿Paciente entiende riesgo de regrowth?','¿RMN + endoscopía cada 3 meses?']};
+    if(s.ecog>=2||!fit){
+      var fertilityLCRT = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: RT pélvica compromete fertilidad — discutir preservación ovárica/embrionaria ANTES de iniciar CRT'] : [];
+      return {riesgo:'high',riesgoLabel:'Riesgo Alto — PS limitado',esquema:'LCRT estándar (50.4Gy + capecitabina) → TME',justificacion:'PS ≥2 o comorbilidades que contraindican FOLFIRINOX. LCRT estándar con capecitabina como neoadyuvancia adaptada al PS.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿Evaluación funcional/geriátrica?','¿CAPOX oral como alternativa?','¿Evaluación nutricional?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityLCRT)};
+    }
+    var prospectEligible = fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos &&
+      ((s.cT==='cT2'&&s.cN==='N1') || (s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')));
+    var alturaNum = parseFloat(s.altura);
+    var rectoAlto = alturaNum > 10;
+    var dualOption = fit && s.cT==='cT3a' && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoAlto;
+    if(dualOption){
+      var fertilityDual = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['✅ Mujer con deseo de fertilidad: PROSPECT preferido — evita RT pélvica','⚠️ Si se elige cirugía directa: sin impacto reproductivo adicional'] : [];
+      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Dos opciones válidas',esquema:'OPCIÓN A — Cirugía directa (TME) sin neoadyuvancia\nOPCIÓN B — PROSPECT: FOLFOX ×6 ciclos → si respuesta ≥20% o mrTRG 1-3 → TME sin RT',justificacion:'cT3a N0 CRM libre sin EMVI. Ambas opciones son válidas según evidencia actual.\n\n▸ CIRUGÍA DIRECTA (ESMO CPG 2025): recurrencia local <10% con TME de calidad. Sin toxicidad de tratamiento. Evita quimioterapia innecesaria. Desventaja: sin downstaging, sin información sobre biología tumoral, sin posibilidad de W&W.\n\n▸ PROSPECT (NEJM 2023): FOLFOX neoadyuvante evita radioterapia pélvica. DFS 5 años: 80.8% vs 78.6% (no inferioridad). Ventaja: si responde bien, puede evitar también la RT. Desventaja: toxicidad de FOLFOX (neuropatía, hematológica), requiere reevaluación radiológica. Si no responde → necesita LCRT igual.\n\nDecisión debe tomarse en MDT considerando preferencia del paciente y experiencia del centro.',evidencia:['ESMO CPG 2025','PROSPECT NEJM 2023','NCCN v1.2026'],ww:false,prospect:true,dual:true,mdtPreguntas:['¿Calidad del TME esperada en el centro?','¿Preferencia del paciente: evitar QT vs evitar RT?','¿Disponibilidad de seguimiento para PROSPECT (RMN 8-10 sem)?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?','¿Si PROSPECT: criterio de respuesta definido antes de iniciar?'].concat(fertilityDual)};
+    }
+    if(prospectEligible){
+      var fertilityPROSP = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['✅ Mujer con deseo de fertilidad: PROSPECT evita RT pélvica si respuesta adecuada — esquema preferido en esta situación'] : [];
+      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Candidato PROSPECT',esquema:'FOLFOX neoadyuvante (×6 ciclos) → Reevaluar: si respuesta ≥20% o mrTRG 1-3 → cirugía directa (TME) sin RT. Si no respuesta → LCRT estándar → cirugía.',justificacion:'PROSPECT (NEJM 2023, Schrag et al.) — T2N1 o T3 bajo-moderado riesgo, CRM libre. DFS a 5 años: 80.8% (FOLFOX) vs 78.6% (CRT), no inferioridad demostrada. Evita toxicidad pélvica. Incorporado NCCN v1.2026.',evidencia:['PROSPECT NEJM 2023','NCCN v1.2026','ESMO 2025'],ww:false,prospect:true,mdtPreguntas:['¿Confirmar CRM libre >1mm en RMN de alta calidad?','¿Ausencia de EMVI positivo y ganglios N2?','¿ECOG 0-1 apto para FOLFOX?','¿Definir criterio de respuesta pre-cirugía (≥20% reducción o mrTRG 1-3)?','¿Plan si no responde a FOLFOX (CRT de rescate)?','¿Preferencia del paciente sobre evitar radioterapia?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityPROSP)};
+    }
+    if(rectoAlto && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos){
+      return {riesgo:'low',riesgoLabel:'Riesgo Bajo — Recto alto',esquema:'Cirugía directa (TME/LAR) sin neoadyuvancia',justificacion:'Recto alto (>10cm) cT3 N0 CRM libre sin EMVI. Recurrencia local <5% con TME de calidad (ESMO CPG 2025). Neoadyuvancia no indicada en este perfil. PROSPECT no fue diseñado para recto alto. NCCN v1.2026: perfilado molecular post-resección.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:['¿Abordaje laparoscópico/robótico?','¿Calidad del TME esperada?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?']};
+    }
+    var fertilityInt = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: si se decide LCRT, discutir preservación ovárica antes de iniciar'] : [];
+    return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio',esquema:'Decisión en MDT — cirugía directa vs LCRT neoadyuvante',justificacion:'cT3a/b N0-N1 CRM libre sin EMVI. Recurrencia local <10% con TME de calidad. Cirugía directa posible (ESMO 2025). NCCN v1.2026: perfilado molecular post-resección recomendado.',evidencia:['ESMO CPG 2025','NCCN v1.2026','ASCO JCO 2024'],ww:false,mdtPreguntas:['¿Riesgo de margen comprometido?','¿Calidad del TME esperada?','¿Preferencia del paciente?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityInt)};
+  }
+
+  function analyzeReevalRules() {
+    var s=state, mrtrg=s.mrtrg, dwi=s.dwi, drePost=s.drePost, endoPost=s.endoPost, biopsia=s.biopsiaPost, crmPost=s.crmPost;
+    if(s.esquemaRecibido === 'prospect_folfox'){
+      if(s.prospectResp === 'resp_buena' || (mrtrg && mrtrg <= 3)){
+        return {respuesta:'ccr',respuestaLabel:'Respuesta adecuada post-FOLFOX — PROSPECT',decision:'Cirugía directa (TME) — sin radioterapia',justificacion:'Respuesta ≥20% o mrTRG 1-3 post-FOLFOX. Criterio PROSPECT cumplido: cirugía directa (TME) sin necesidad de CRT. DFS a 5 años equivalente al brazo CRT (80.8% vs 78.6%, NEJM 2023). Se evita toxicidad pélvica de la radioterapia.',seguimiento:['Cirugía TME en las próximas semanas (ventana óptima: 4-8 sem post-FOLFOX)','Sin radioterapia preoperatoria','Adyuvancia post-cirugía según estadio patológico (ypStage)','Seguimiento estándar post-TME'],mdtPreguntas:['¿Confirmar respuesta ≥20% en RMN comparativa basal vs post-FOLFOX?','¿mrTRG 1-3 en RMN de calidad?','¿CRM libre post-FOLFOX?','¿Tipo de cirugía: LAR vs APR?','¿Timing cirugía: 4-8 semanas post-último ciclo?','¿Adyuvancia según ypStage?']};
+      }
+      if(s.prospectResp === 'resp_insuf' || (mrtrg && mrtrg >= 4)){
+        return {respuesta:'partial',respuestaLabel:'Respuesta insuficiente post-FOLFOX — PROSPECT',decision:'CRT estándar de rescate → luego cirugía (TME)',justificacion:'Reducción <20% o mrTRG 4-5 post-FOLFOX. No se alcanzó el criterio de respuesta PROSPECT. Indicación de CRT estándar (50.4Gy + capecitabina) antes de la cirugía, según protocolo PROSPECT original (brazo de rescate).',seguimiento:['Iniciar LCRT estándar (50.4Gy + capecitabina)','Reevaluar respuesta post-CRT (8-12 semanas)','Cirugía TME tras completar CRT','Considerar nueva RMN pre-cirugía'],mdtPreguntas:['¿Confirmar criterio de no-respuesta (RMN comparativa)?','¿Contraindicaciones para CRT estándar?','¿Re-estadificar con RMN después de CRT?','¿Preservación orgánica aún posible si logra cCR tras CRT?']};
+      }
+      return {respuesta:'near',respuestaLabel:'Evaluación PROSPECT pendiente',decision:'Completar RMN comparativa antes de decidir',justificacion:'Para aplicar criterio PROSPECT se requiere RMN comparativa (post-FOLFOX vs basal). La decisión cirugía directa vs CRT rescate depende de la respuesta tumoral documentada por imagen.',seguimiento:['Realizar RMN pelvis comparativa urgente','Comparar con RMN basal pre-FOLFOX','Definir criterio de respuesta en MDT','Decisión: cirugía directa vs CRT'],mdtPreguntas:['¿Disponibilidad de RMN 3T con DWI?','¿RMN basal disponible para comparar?','¿Tiempo desde último ciclo FOLFOX?']};
+    }
+    if(biopsia==='positiva') return {respuesta:'noresp',respuestaLabel:'Tumor Residual Confirmado',decision:'Cirugía — TME',justificacion:'Biopsia positiva confirma tumor residual viable. Indicación de cirugía TME sin demora.',seguimiento:null,mdtPreguntas:['¿APR vs LAR?','¿Ileostomía de protección?','¿Fecha de cirugía?']};
+    if(endoPost==='masa_visible'||drePost==='masa_residual') return {respuesta:'noresp',respuestaLabel:'Sin Respuesta',decision:'Cirugía — TME',justificacion:'Masa visible en endoscopía o palpable al DRE. Sin respuesta clínica relevante.',seguimiento:null,mdtPreguntas:['¿Tipo de cirugía definitiva?','¿Reevaluar CRM para planificación?','¿Adyuvancia post-cirugía?']};
+    if(mrtrg>=4) return {respuesta:'partial',respuestaLabel:'Respuesta Insuficiente',decision:'Cirugía — TME',justificacion:'mrTRG '+mrtrg+': tumor predominante. Señal tumoral supera la fibrosis. DWI '+(dwi||'NE')+'.',seguimiento:null,mdtPreguntas:['¿APR vs LAR?','¿CRM post libre?','¿Adyuvancia?']};
+    var mrtrg12=mrtrg<=2, dwiOk=dwi==='negativo'||dwi==='minimo';
+    var dreOk=drePost==='normal'||drePost==='cicatriz'||drePost==='no_alcanzable';
+    var endoOk=endoPost==='cicatriz_plana', endoNear=endoPost==='ulcera_superficial', crmOk=crmPost==='libre';
+    if(mrtrg12&&dwiOk&&dreOk&&endoOk&&crmOk){
+      var altaConfianza = mrtrg===1;
+      var seguimientoCCR = altaConfianza ?
+        ['RMN + endoscopía + DRE cada 3 meses — Año 1 y 2','RMN + endoscopía + DRE cada 6 meses — Año 3-5','TC TAP cada 6 meses los primeros 3 años','Si regrowth: cirugía de rescate (R0 >90%)'] :
+        ['⚠️ Confianza moderada (mrTRG 2): primera reevaluación a las 6-8 semanas (RMN + endoscopía + DRE) antes de confirmar W&W','Si confirma respuesta en reevaluación precoz → seguimiento cada 3 meses Año 1-2','RMN + endoscopía + DRE cada 6 meses — Año 3-5','TC TAP cada 6 meses los primeros 3 años','Si regrowth: cirugía de rescate (R0 >90%)'];
+      return {respuesta:'ccr',respuestaLabel:'cCR confirmada — '+(altaConfianza?'Alta confianza':'Confianza moderada'),decision:s.objetivoTto==='ww'?'Watch & Wait':'Watch & Wait (discutir en MDT)',justificacion:'mrTRG '+mrtrg+' + DWI '+dwi+' + DRE sin masa + cicatriz endoscópica = cCR. OPRA: 77% preservación en cCR. Regrowth: 23-25%, rescatable en 88-91%.',seguimiento:seguimientoCCR,mdtPreguntas:['¿Equipo de acuerdo con W&W?','¿Paciente acepta riesgo de regrowth?','¿Acceso a RMN + endoscopía cada 3 meses?']};
+    }
+    if(mrtrg<=3&&(endoNear||endoOk)&&dreOk){
+      var dwiW=dwi==='moderado'||dwi==='marcado';
+      var sem=s.semanasPost, esq=s.esquemaRecibido;
+      // Lógica de timing por protocolo
+      var timingDecision, timingJust, timingSeg;
+      // LCRT estándar
+      if(esq==='lcrt'){
+        if(sem==='<8'||sem==='8-12'){
+          timingDecision='Evaluación prematura — repetir en 4-6 semanas (objetivo: 12-16 sem post-RT)';
+          timingJust='NCCN v1.2026: timing óptimo post-LCRT es 12-16 semanas. Evaluación <12 sem sobreestima tumor residual por fibrosis en evolución.';
+          timingSeg=['Repetir evaluación completa (RMN + endoscopía + examen clínico) a las 12-16 semanas post-RT','No tomar decisión quirúrgica en esta etapa'];
+        } else if(sem==='12-16'||sem==='16-24'){
+          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 4-6 semanas':'Reevaluar en 4-6 semanas — puede convertir a cCR';
+          timingJust='Timing óptimo post-LCRT. La respuesta puede continuar hasta la semana 20. Si sigue siendo nCR a las 20-24 sem → cirugía.';
+          timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 4-6 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 20-24 sem post-RT → cirugía TME'];
+        } else {
+          timingDecision='nCR persistente — Cirugía TME (sin beneficio de más espera)';
+          timingJust='Más de 20-24 semanas post-LCRT sin conversión a cCR. La respuesta adicional es improbable. Mayor espera aumenta complejidad quirúrgica por fibrosis (Fitzsimmons 2024).';
+          timingSeg=['Cirugía TME sin demora','No extender espera — riesgo de fibrosis severa intraoperatoria','Coordinar equipo quirúrgico'];
+        }
+      // RAPIDO
+      } else if(esq==='rapido'){
+        if(sem==='<8'||sem==='8-12'){
+          timingDecision='Evaluación inicial post-RAPIDO — reevaluar en 6-8 semanas';
+          timingJust='Post-RAPIDO la respuesta es tiempo-dependiente. Evaluación <16 sem puede subestimar la respuesta final. Se recomienda reevaluar a las 16-24 sem.';
+          timingSeg=['Repetir evaluación completa a las 16-24 semanas post-último ciclo QT','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica aún'];
+        } else if(sem==='12-16'||sem==='16-24'){
+          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — puede convertir a cCR';
+          timingJust='Timing adecuado post-RAPIDO. La respuesta sigue siendo tiempo-dependiente hasta las 24 sem. Si persiste nCR a las 24 sem → cirugía.';
+          timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 24 sem post-QT → cirugía TME'];
+        } else {
+          timingDecision='nCR persistente post-RAPIDO — Cirugía TME';
+          timingJust='Más de 24 semanas post-RAPIDO sin conversión a cCR. Fitzsimmons (ANZ J Surg 2024): espera >14 meses sin conversión aumentó significativamente la complejidad quirúrgica por fibrosis severa.';
+          timingSeg=['Cirugía TME sin demora adicional','No extender espera — riesgo de fibrosis severa intraoperatoria','Coordinar equipo quirúrgico'];
+        }
+      // PRODIGE 23 o OPRA (TNT)
+      } else if(esq==='tnt_prodige'||esq==='tnt_opra'){
+        if(sem==='<8'||sem==='8-12'||sem==='12-16'){
+          timingDecision='Evaluación prematura para TNT — repetir a las 24 semanas';
+          timingJust='NCCN v1.2026: timing óptimo post-TNT es 24 semanas. Con OPRA la QT consolidante puede seguir teniendo efecto. Evaluación <24 sem es prematura.';
+          timingSeg=['Repetir evaluación completa a las 24 semanas post-fin de tratamiento','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica aún'];
+        } else if(sem==='16-24'||sem==='24-34'){
+          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — puede convertir a cCR';
+          timingJust='Timing óptimo post-TNT. Respuesta puede continuar hasta la semana 34-38. Si persiste nCR a las 34-38 sem → cirugía.';
+          timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 34-38 sem → cirugía TME'];
+        } else {
+          timingDecision='nCR persistente post-TNT — Cirugía TME';
+          timingJust='Más de 34-38 semanas post-TNT sin conversión a cCR. Sin beneficio adicional de espera. Riesgo de fibrosis quirúrgica aumenta.';
+          timingSeg=['Cirugía TME sin demora','No extender espera','Coordinar equipo quirúrgico'];
+        }
+      // Dostarlimab
+      } else if(esq==='dostarlimab'){
+        if(sem==='<8'||sem==='8-12'||sem==='12-16'){
+          timingDecision='Evaluación prematura post-dostarlimab — repetir a los 6 meses';
+          timingJust='Con dostarlimab (dMMR/MSI-H) las respuestas pueden ser lentas y tardías. La evaluación formal se realiza a los 6 meses de finalizado el tratamiento (Cercek NEJM 2022).';
+          timingSeg=['Repetir evaluación completa a los 6 meses post-fin de dostarlimab','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica prematura'];
+        } else if(sem==='16-24'||sem==='24-34'){
+          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — conversión tardía posible con inmunoterapia';
+          timingJust='Post-dostarlimab la conversión tardía a cCR está reportada hasta los 9-12 meses. Casos documentados de respuesta continua más allá de los 6 meses de finalizado el tratamiento.';
+          timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a los 12 meses → discutir cirugía en MDT'];
+        } else {
+          timingDecision='nCR persistente post-dostarlimab >9 meses — Discutir cirugía en MDT';
+          timingJust='Más de 9-12 meses post-dostarlimab sin conversión a cCR. Datos limitados sobre conversión tardía más allá de este punto. Decisión en MDT con información al paciente.';
+          timingSeg=['Discutir en MDT: cirugía TME vs vigilancia adicional','Datos insuficientes para espera >12 meses sin conversión','Si se decide W&W: acortar intervalo de seguimiento a cada 6-8 semanas'];
+        }
+      // Sin esquema especificado o esquema genérico
+      } else {
+        timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 4-6 semanas — MDT':'Reevaluar en 4-6 semanas antes de decidir W&W';
+        timingJust='Timing no especificado. Reevaluación multimodal recomendada antes de cualquier decisión.';
+        timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 4-6 semanas','Si convierte a cCR → W&W','Si persiste nCR → cirugía TME'];
+      }
+      return {respuesta:'near',respuestaLabel:'Near-Complete Response (nCR)',
+        decision:timingDecision,
+        justificacion:'mrTRG '+mrtrg+' con hallazgos favorables en DRE y endoscopía. '+(dwiW?'DWI '+dwi+' genera incertidumbre adicional. ':'DWI favorable. ')+timingJust+'<br><br>⚠️ <strong>Advertencia — OPRA secundario (Ann Surg 2025, n=324):</strong> nCR/nCR tiene regrowth del <strong>59.3%</strong> y DFS 68.9% a 5 años vs 89.6% en cCR. Chinese W&W Database (JCO 2024, n=318): regrowth 41.6% vs 16.4% en cCR (p<0.01), OPR 69.2% vs 88%. Sin embargo OS y CSS sin diferencia significativa — cirugía de rescate exitosa en 82%. No hay consenso sobre definición de nCR (Fitzsimmons, ANZ J Surg 2024).',
+        seguimiento:timingSeg.concat(['⚠️ NO iniciar W&W definitivo hasta confirmar cCR en reevaluación','Si hay progresión en cualquier momento → cirugía TME sin demora']),
+        mdtPreguntas:['¿Timing de evaluación correcto para el esquema recibido?','¿Reevaluación completa: RMN (3T DWI) + endoscopía + examen clínico?','¿Paciente informado: regrowth 41-59% si persiste nCR en W&W?','¿Equipo con experiencia en W&W?','¿Acceso a seguimiento cada 3 meses garantizado?','¿Consenso MDT explícito antes de no operar?']};
+    }
+    return {respuesta:'partial',respuestaLabel:'Respuesta Parcial / Evaluación Incompleta',decision:'Completar evaluación o cirugía TME',justificacion:'Datos insuficientes para clasificación confiable o mrTRG 3 con DWI preocupante. Repetir RMN en 4-6 semanas antes de decidir.',seguimiento:['Repetir RMN pelvis con DWI en 4-6 semanas','Si mejora → reevaluar','Si persiste → TME'],mdtPreguntas:['¿Completar evaluación multimodal?','¿Timing correcto (≥8 semanas post-RT)?']};
+  }
+
+  function runAnalysis() {
+    collectStep();
+    showStep(4);
+    var r=analyzeRules();
+    var rc={low:'risk-low',intermediate:'risk-intermediate',high:'risk-high',veryhigh:'risk-veryhigh',special:'risk-special'};
+    var bc={low:'badge-low',intermediate:'badge-intermediate',high:'badge-high',veryhigh:'badge-veryhigh',special:'badge-special'};
+    document.getElementById('resultsContainer').innerHTML =
+      '<div class="result-card '+rc[r.riesgo]+'">'+
+        '<div class="result-header">Clasificación <span class="badge '+bc[r.riesgo]+'">'+r.riesgoLabel+'</span></div>'+
+        (r.dual ?
+        '<div class="treatment-box" style="border-left:4px solid #2196f3"><div class="treatment-title">📋 Dos opciones válidas — decisión en MDT</div>'+
+        '<div style="margin-top:8px;padding:10px;background:#e3f2fd;border-radius:6px"><strong>OPCIÓN A — Cirugía directa (TME)</strong><br><span style="font-size:0.82rem">Sin neoadyuvancia. Válido en cT3a N0 CRM libre (ESMO 2025).<br>✅ Evita toda toxicidad neoadyuvante<br>✅ Sin demora al tratamiento definitivo<br>⚠️ Sin downstaging, sin posibilidad de W&W<br>⚠️ Sin información sobre biología tumoral</span></div>'+
+        '<div style="margin-top:8px;padding:10px;background:#f3e5f5;border-radius:6px"><strong>OPCIÓN B — PROSPECT (FOLFOX ×6 → evaluar → TME)</strong><br><span style="font-size:0.82rem">Si respuesta ≥20% o mrTRG 1-3 → cirugía sin RT (NEJM 2023).<br>✅ Evita radioterapia pélvica si responde<br>✅ DFS equivalente a CRT (80.8% vs 78.6%)<br>⚠️ Toxicidad FOLFOX (neuropatía, hematológica)<br>⚠️ Si no responde → necesita LCRT igual</span></div>'+
+        '<div style="margin-top:10px">'+r.evidencia.map(function(e){return '<span class="evidence-tag">'+e+'</span>';}).join('')+'</div></div>'
+        :
+        '<div class="treatment-box"><div class="treatment-title">📋 Esquema recomendado</div><div class="treatment-desc">'+r.esquema+'</div><div style="margin-top:10px">'+r.evidencia.map(function(e){return '<span class="evidence-tag">'+e+'</span>';}).join('')+'</div></div>'
+        )+
+        (!r.dual ? '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Justificación</div><div class="treatment-desc">'+r.justificacion+'</div></div>' : '')+
+        (r.ww?'<div class="alert alert-success">🎯 <strong>Candidato potencial a Watch &amp; Wait</strong> si logra cCR. Seguimiento cada 3 meses obligatorio.</div>':'')+
+        (r.prospect?'<div class="alert alert-info">🔬 <strong>Esquema PROSPECT (NEJM 2023):</strong> FOLFOX ×6 ciclos neoadyuvante. Si respuesta ≥20% (por imagen) o mrTRG 1-3 en RMN a las 8-10 semanas → cirugía directa (TME) sin radioterapia. Si no hay respuesta adecuada → LCRT estándar y luego cirugía. Criterio de respuesta debe definirse en MDT antes de iniciar.</div>':'')+
+      '</div>'+
+      '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
+      '<div class="ai-section"><h3>🤖 Análisis IA</h3><div class="ai-response">Sin API Key — análisis por reglas de evidencia disponible arriba.</div></div>'+
+      '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>';
+  }
+
+  function exportPDF() {
+    var fecha = new Date().toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
+    var contenido = document.getElementById(mode==='inicial'?'resultsContainer':'reevalResultsContainer').innerHTML;
+    var win = window.open('','_blank');
+    win.document.write(
+      '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
+      '<title>RectalMDT — '+fecha+'</title>'+
+      '<style>'+
+        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#212529;font-size:13px}'+
+        'h1{font-size:1.1rem;color:#1a6bb5;margin-bottom:4px}'+
+        '.meta{font-size:0.75rem;color:#6c757d;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #e8f4fd}'+
+        '.result-card{border-radius:8px;padding:16px;margin-bottom:12px}'+
+        '.risk-low{background:#d4edda;border-left:5px solid #27ae60}'+
+        '.risk-intermediate{background:#fff3cd;border-left:5px solid #e67e22}'+
+        '.risk-high{background:#fde8e8;border-left:5px solid #c0392b}'+
+        '.risk-veryhigh{background:#f5d0d0;border-left:5px solid #7b0000}'+
+        '.risk-special{background:#f0e6fa;border-left:5px solid #7c3aed}'+
+        '.resp-ccr{background:#d4edda;border-left:5px solid #27ae60}'+
+        '.resp-near{background:#fff3cd;border-left:5px solid #e67e22}'+
+        '.resp-partial{background:#fde8e8;border-left:5px solid #c0392b}'+
+        '.resp-noresp{background:#f5d0d0;border-left:5px solid #7b0000}'+
+        '.result-header{font-size:1rem;font-weight:700;margin-bottom:8px}'+
+        '.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:700}'+
+        '.badge-low{background:#c3e6cb;color:#155724}.badge-intermediate{background:#ffeeba;color:#856404}'+
+        '.badge-high{background:#f5c6cb;color:#7b1111}.badge-veryhigh{background:#3d1010;color:#ff8080}'+
+        '.badge-special{background:#e2d0f0;color:#4a1278}'+
+        '.badge-ccr{background:#c3e6cb;color:#155724}.badge-near{background:#ffeeba;color:#856404}'+
+        '.badge-partial{background:#f5c6cb;color:#7b1111}.badge-noresp{background:#3d1010;color:#ff8080}'+
+        '.treatment-box{background:white;border-radius:6px;padding:12px;margin-top:10px}'+
+        '.treatment-title{font-weight:700;font-size:0.85rem;margin-bottom:4px;color:#0f4a80}'+
+        '.treatment-desc{font-size:0.8rem;color:#495057;line-height:1.5}'+
+        '.evidence-tag{display:inline-block;background:#e8f4fd;color:#1a6bb5;font-size:0.65rem;font-weight:600;padding:2px 6px;border-radius:4px;margin:4px 4px 0 0}'+
+        '.mdt-questions{background:#fff8e1;border-radius:6px;padding:12px;margin-top:10px}'+
+        '.mdt-questions h4{font-size:0.8rem;font-weight:700;color:#7d4e00;margin-bottom:8px}'+
+        '.mdt-questions ul{padding-left:16px;margin:0}'+
+        '.mdt-questions li{font-size:0.78rem;color:#5d3a00;margin-bottom:4px;line-height:1.4}'+
+        '.alert{padding:10px 12px;border-radius:6px;font-size:0.78rem;margin-top:10px}'+
+        '.alert-success{background:#d4edda;border-left:4px solid #27ae60;color:#155724}'+
+        '.alert-info{background:#e8f4fd;border-left:4px solid #1a6bb5;color:#0c4a7a}'+
+        '.legal{font-size:0.68rem;color:#6c757d;margin-top:14px;padding:10px;background:#f8f9fa;border-radius:6px}'+
+        '.btn-row{display:none}'+
+        '.ai-section{display:none}'+
+        '@media print{body{padding:12px}button{display:none}}'+
+      '</style></head><body>'+
+      '<h1>🩺 RectalMDT</h1>'+
+      '<div class="meta">Fecha: '+fecha+' &nbsp;|&nbsp; Herramienta de soporte de decisión clínica — NCCN v1.2026 · ESMO 2025</div>'+
+      contenido+
+      '</body></html>'
+    );
+    win.document.close();
+    setTimeout(function(){ win.print(); }, 500);
+  }
+
+  function runReevalAnalysis() {
+    collectStep();
+    showStep(3);
+    var r=analyzeReevalRules();
+    var rc={ccr:'resp-ccr',near:'resp-near',partial:'resp-partial',noresp:'resp-noresp'};
+    var bc={ccr:'badge-ccr',near:'badge-near',partial:'badge-partial',noresp:'badge-noresp'};
+    var ic={ccr:'✅',near:'⚠️',partial:'🔶',noresp:'❌'};
+    document.getElementById('reevalResultsContainer').innerHTML =
+      '<div class="result-card '+rc[r.respuesta]+'">'+
+        '<div class="result-header">'+ic[r.respuesta]+' <span class="badge '+bc[r.respuesta]+'">'+r.respuestaLabel+'</span></div>'+
+        '<div class="treatment-box"><div class="treatment-title">🎯 Decisión</div><div class="treatment-desc" style="font-size:1rem;font-weight:600">'+r.decision+'</div></div>'+
+        '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Justificación</div><div class="treatment-desc">'+r.justificacion+'</div></div>'+
+        (r.seguimiento?'<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📅 Seguimiento</div><ul style="padding-left:16px;margin-top:6px">'+r.seguimiento.map(function(s){return '<li style="font-size:0.82rem;margin-bottom:6px">'+s+'</li>';}).join('')+'</ul></div>':'')+
+      '</div>'+
+      '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
+      '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>';
+  }
+</script>
+</body>
+</html>
