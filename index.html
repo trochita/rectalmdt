@@ -301,6 +301,13 @@
           </div>
         </div>
         <div class="field">
+          <label>¿Disponibilidad de RT de curso corto (SCRT 5×5Gy) en el centro?</label>
+          <div class="radio-group">
+            <div class="radio-option" data-field="scrtDisponible" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — disponible en el centro</div></div>
+            <div class="radio-option" data-field="scrtDisponible" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — no disponible en el centro</div></div>
+          </div>
+        </div>
+        <div class="field">
           <label>TC Tórax-Abdomen-Pelvis</label>
           <div class="radio-group">
             <div class="radio-option" data-field="tc" data-val="M0"><div class="radio-dot"></div><div class="label-text"><strong>M0</strong> — Sin metástasis</div></div>
@@ -493,7 +500,7 @@
     edad:null,sexo:null,ecog:null,mmr:null,comorbilidades:[],preservacion:null,
     cT:null,cN:null,crm:null,emvi:null,altura:null,tamano:null,circunferencia:null,
     gangliosLaterales:null,depositos:null,cea:null,distanciaDRE:null,dre:null,
-    tc:null,observaciones:'',apiKey:null,
+    tc:null,observaciones:'',apiKey:null,scrtDisponible:null,
     paridad:null,
     esquemaRecibido:null,semanasPost:null,ceaPost:null,objetivoTto:null,prospectResp:null,
     mrtrg:null,dwi:null,crmPost:null,gangliosPost:null,
@@ -692,7 +699,18 @@
     var bajo=parseFloat(s.altura)<5;
     if(crmInv||t4b||t4a||(s.emvi==='positivo'&&(n2||crmInv||crmAmen))||gangliosLat||depositos){
       var fertilityQ = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento','¿Derivación a medicina reproductiva urgente?'] : [];
-      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:'TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).',justificacion:'Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.',evidencia:['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?','¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'].concat(fertilityQ)};
+      var scrtOk = s.scrtDisponible !== 'no';
+      var esquemaMuyAlto, justMuyAlto, evidMuyAlto;
+      if(scrtOk){
+        esquemaMuyAlto = 'TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).';
+        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.';
+        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
+      } else {
+        esquemaMuyAlto = '⭐ Estándar internacional: RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX)\n\n⚠️ SCRT no disponible en este centro. Opciones alternativas:\n▸ PRODIGE 23 — mFOLFIRINOX → LCRT (evidencia nivel 1, no requiere SCRT)\n▸ Derivación a centro con SCRT — si RAPIDO es claramente superior para este perfil\n▸ LCRT estándar — si PS limitado o no tolera FOLFIRINOX';
+        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO es el estándar internacional pero requiere SCRT (5×5Gy) no disponible en este centro. PRODIGE 23 (mFOLFIRINOX → LCRT) es la alternativa de nivel 1 sin necesidad de SCRT — resultados oncológicos equivalentes en MFS y DFS a 7 años. La derivación a centro con SCRT debe evaluarse según la situación del paciente. ⚠️ RAPIDO a 5 años: mayor recurrencia locorregional (10% vs 6%) vs CRT estándar.';
+        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
+      }
+      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:esquemaMuyAlto,justificacion:justMuyAlto,evidencia:evidMuyAlto,ww:false,scrtNoDisponible:!scrtOk,mdtPreguntas:(scrtOk?['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?']:['¿PRODIGE 23 vs derivación a centro con SCRT?','¿Criterio de derivación: perfil del paciente, distancia, tiempos de espera?']).concat(['¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?']).concat(fertilityQ)};
     }
     if((s.emvi==='positivo'||n2||t3cd||depositos)&&!(preservacion&&bajo&&!crmInv)&&fit){
       var fertilityQ2 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento'] : [];
@@ -846,6 +864,7 @@
         '<div class="treatment-box"><div class="treatment-title">📋 Esquema recomendado</div><div class="treatment-desc">'+r.esquema+'</div><div style="margin-top:10px">'+r.evidencia.map(function(e){return '<span class="evidence-tag">'+e+'</span>';}).join('')+'</div></div>'
         )+
         (!r.dual ? '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Justificación</div><div class="treatment-desc">'+r.justificacion+'</div></div>' : '')+
+        (r.scrtNoDisponible?'<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">⚠️ <strong>SCRT no disponible en este centro.</strong> El estándar internacional es RAPIDO. Las opciones alternativas están detalladas arriba — la decisión final es del MDT.</div>':'')+
         (r.ww?'<div class="alert alert-success">🎯 <strong>Candidato potencial a Watch &amp; Wait</strong> si logra cCR. Seguimiento cada 3 meses obligatorio.</div>':'')+
         (r.prospect?'<div class="alert alert-info">🔬 <strong>Esquema PROSPECT (NEJM 2023):</strong> FOLFOX ×6 ciclos neoadyuvante. Si respuesta ≥20% (por imagen) o mrTRG 1-3 en RMN a las 8-10 semanas → cirugía directa (TME) sin radioterapia. Si no hay respuesta adecuada → LCRT estándar y luego cirugía. Criterio de respuesta debe definirse en MDT antes de iniciar.</div>':'')+
       '</div>'+
