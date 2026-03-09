@@ -148,6 +148,13 @@
           <div class="mode-desc">Evaluación de respuesta al tratamiento. RMN (mrTRG + DWI), tacto rectal, endoscopía y CEA. Decisión: Watch &amp; Wait vs cirugía TME.</div>
         </div>
       </div>
+      <div class="mode-card" id="btnDemo" style="border:2px dashed var(--border);opacity:0.75">
+        <div class="mode-icon">🧪</div>
+        <div>
+          <div class="mode-title" style="color:var(--gray)">Modo Demo</div>
+          <div class="mode-desc">Explorar la app sin generar registros en la base de datos nacional. Los resultados son idénticos pero no se guarda ningún caso.</div>
+        </div>
+      </div>
     </div>
     <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
   </div>
@@ -308,13 +315,6 @@
           </div>
         </div>
         <div class="field">
-          <label>¿Disponibilidad de RT de curso corto (SCRT 5×5Gy) en el centro?</label>
-          <div class="radio-group">
-            <div class="radio-option" data-field="scrtDisponible" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — disponible en el centro</div></div>
-            <div class="radio-option" data-field="scrtDisponible" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — no disponible en el centro</div></div>
-          </div>
-        </div>
-        <div class="field">
           <label>TC Tórax-Abdomen-Pelvis</label>
           <div class="radio-group">
             <div class="radio-option" data-field="tc" data-val="M0"><div class="radio-dot"></div><div class="label-text"><strong>M0</strong> — Sin metástasis</div></div>
@@ -352,6 +352,50 @@
 
   <!-- MÓDULO REEVALUACIÓN -->
   <div id="reevalModule" style="display:none">
+
+    <!-- R-BUSCAR: pantalla de búsqueda por registro -->
+    <div id="reevalBusqueda" style="display:none">
+      <div class="card">
+        <div class="card-title purple">🔄 Reevaluación Post-Neoadyuvancia</div>
+        <p style="font-size:0.88rem;color:#495057;margin-bottom:16px">Si el paciente fue registrado en una evaluación inicial, ingresá el número de registro para ver sus datos previos al tratamiento.</p>
+        <div class="field">
+          <label>Número de registro del paciente</label>
+          <input type="text" id="buscarRegistroInput" placeholder="Ej: URY-CLINICAS-20260309-0001" style="text-transform:uppercase" />
+        </div>
+        <button class="btn btn-purple" style="width:100%;margin-bottom:10px" onclick="buscarRegistroPrevio()">🔍 Buscar registro</button>
+        <button class="btn btn-secondary" style="width:100%" onclick="continuarSinRegistro()">Continuar sin registro →</button>
+        <div id="busquedaMsg" style="margin-top:12px;font-size:0.85rem"></div>
+      </div>
+      <div id="resumenPrevioContainer" style="display:none">
+        <div class="card" style="border-left:4px solid var(--purple)">
+          <div class="card-title purple">📋 Datos previos al tratamiento</div>
+          <div id="resumenPrevioContent" style="font-size:0.85rem;line-height:1.8"></div>
+          <div id="discordanciaEsquemaField" style="display:none;margin-top:12px">
+            <div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-bottom:10px">
+              ⚠️ <strong>El esquema recibido no coincide con el recomendado.</strong> Por favor indicá el motivo.
+            </div>
+            <div class="field"><label>¿Por qué no recibió el protocolo recomendado?</label>
+              <select id="motivoNoProtocolo">
+                <option value="">Seleccionar motivo</option>
+                <option value="sin_scrt">Sin disponibilidad de SCRT en el centro</option>
+                <option value="sin_folfirinox">Sin disponibilidad de FOLFIRINOX</option>
+                <option value="toxicidad">Toxicidad / intolerancia al esquema</option>
+                <option value="ps_deterioro">Deterioro del estado funcional (PS)</option>
+                <option value="comorbilidad_nueva">Comorbilidad nueva o intercurrencia</option>
+                <option value="preferencia_paciente">Preferencia del paciente</option>
+                <option value="decision_mdt">Decisión del MDT post-estadificación</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="field"><label>Detalle adicional (opcional)</label>
+              <input type="text" id="motivoNoProtocoloDetalle" placeholder="Describir brevemente..." />
+            </div>
+          </div>
+          <button class="btn btn-purple" style="width:100%;margin-top:12px" onclick="continuarConRegistro()">Continuar con estos datos →</button>
+        </div>
+      </div>
+    </div>
+
     <div class="step-indicator">
       <div class="step-dot" id="rdot0"></div>
       <div class="step-dot" id="rdot1"></div>
@@ -514,8 +558,10 @@
     drePost:null,fijacionPost:null,endoPost:null,biopsiaPost:null,obsReeval:''
   };
 
-  document.getElementById('btnInicial').addEventListener('click', function(){ startMode('inicial'); });
-  document.getElementById('btnReeval').addEventListener('click', function(){ startMode('reeval'); });
+  var demoMode = false;
+  document.getElementById('btnInicial').addEventListener('click', function(){ demoMode = false; startMode('inicial'); });
+  document.getElementById('btnReeval').addEventListener('click', function(){ demoMode = false; startMode('reeval'); });
+  document.getElementById('btnDemo').addEventListener('click', function(){ demoMode = true; startMode('inicial'); });
   document.getElementById('btnBack').addEventListener('click', goBack);
   document.getElementById('btnNext').addEventListener('click', goNext);
   document.getElementById('btnAnalyze').addEventListener('click', runAnalysis);
@@ -537,6 +583,7 @@
         document.getElementById('prospectRespField').style.display = (val === 'prospect_folfox') ? 'block' : 'none';
         if(val !== 'prospect_folfox') state.prospectResp = null;
       }
+      if(field === 'regConcordancia' || field === 'regConcordanciaR'){ state[field] = val; }
     });
   });
 
@@ -568,16 +615,31 @@
   function startMode(m) {
     mode = m;
     currentStep = 0;
+    registroPrevio = null;
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('inicialModule').style.display = 'none';
     document.getElementById('reevalModule').style.display = 'none';
     var modId = m === 'inicial' ? 'inicialModule' : 'reevalModule';
     document.getElementById(modId).style.display = 'block';
-    document.getElementById('headerSubtitle').textContent = m === 'inicial' ? 'Evaluación Inicial' : 'Reevaluación Post-Neoadyuvancia';
-    document.querySelectorAll('#' + modId + ' .step').forEach(function(s, i){ s.classList.toggle('active', i === 0); });
-    updateNav();
-    updateDots();
-    updateProgress();
+    var subtitle = m === 'inicial' ? 'Evaluación Inicial' : 'Reevaluación Post-Neoadyuvancia';
+    if(demoMode) subtitle += ' · 🧪 MODO DEMO';
+    document.getElementById('headerSubtitle').textContent = subtitle;
+    if(m === 'reeval' && !demoMode) {
+      // mostrar pantalla de búsqueda primero
+      document.getElementById('reevalBusqueda').style.display = 'block';
+      document.querySelector('.step-indicator').style.display = 'none';
+      document.querySelectorAll('#reevalModule .step').forEach(function(s){ s.classList.remove('active'); });
+      document.getElementById('navButtons').style.display = 'none';
+      document.getElementById('buscarRegistroInput').value = '';
+      document.getElementById('busquedaMsg').innerHTML = '';
+      document.getElementById('resumenPrevioContainer').style.display = 'none';
+    } else {
+      document.getElementById('reevalBusqueda') && (document.getElementById('reevalBusqueda').style.display = 'none');
+      document.querySelectorAll('#' + modId + ' .step').forEach(function(s, i){ s.classList.toggle('active', i === 0); });
+      updateNav();
+      updateDots();
+      updateProgress();
+    }
     window.scrollTo(0,0);
   }
 
@@ -880,12 +942,61 @@
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<div class="ai-section"><h3>🤖 Análisis IA</h3><div class="ai-response">Sin API Key — análisis por reglas de evidencia disponible arriba.</div></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
-      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>';
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+      (demoMode ?
+        '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong> No se genera ningún registro en la base de datos. Volvé al inicio y elegí "Evaluación Inicial" para registrar un caso real.</div>'
+      :
+        '<div id="registroModule" class="card" style="margin-top:16px">'+
+          '<div class="card-title">📋 Registro MDT</div>'+
+          '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">'+
+            '⚠️ <strong>Este registro se enviará a la base de datos nacional RectalMDT.</strong> Usarlo únicamente para casos reales discutidos en MDT.'+
+          '</div>'+
+          '<div class="field"><label>Centro asistencial</label><select id="regCentro"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
+          '<div class="grid-2">'+
+            '<div class="field"><label>Depto. residencia del paciente</label><select id="regDeptoRes">'+deptosOptions()+'</select></div>'+
+            '<div class="field"><label>Depto. nacimiento del paciente</label><select id="regDeptoNac">'+deptosOptions()+'</select></div>'+
+          '</div>'+
+          '<div class="field"><label>¿El MDT decidió el tratamiento recomendado por la app?</label>'+
+            '<div class="radio-group" id="concordanciaGroup">'+
+              '<div class="radio-option" data-field="regConcordancia" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — concordante con la recomendación</div></div>'+
+              '<div class="radio-option" data-field="regConcordancia" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — se decidió otro tratamiento</div></div>'+
+              '<div class="radio-option" data-field="regConcordancia" data-val="modificado"><div class="radio-dot"></div><div class="label-text">⚠️ Modificado — igual protocolo pero adaptado por recursos</div></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="field"><label>Tratamiento decidido por el MDT</label><input type="text" id="regTratamiento" placeholder="Ej: PRODIGE 23, LCRT estándar, cirugía directa..." /></div>'+
+          '<div class="field"><label>Motivo de discordancia / modificación (si aplica)</label>'+
+            '<select id="regMotivo"><option value="">Seleccionar (opcional)</option>'+
+            '<option value="sin_scrt">Sin disponibilidad de SCRT</option>'+
+            '<option value="sin_folfirinox">Sin disponibilidad de FOLFIRINOX</option>'+
+            '<option value="ps_limitado">Estado funcional del paciente (PS limitado)</option>'+
+            '<option value="preferencia_paciente">Preferencia del paciente</option>'+
+            '<option value="comorbilidades">Comorbilidades</option>'+
+            '<option value="derivacion">Derivación a otro centro</option>'+
+            '<option value="otro">Otro</option>'+
+            '</select>'+
+          '</div>'+
+          '<div class="field"><label>N° de registro vinculado (si es reevaluación)</label><input type="text" id="regVinculado" placeholder="Ej: URY-CLINICAS-20260309-0001 (opcional)" /></div>'+
+          '<button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="guardarRegistro()">💾 Guardar y enviar registro</button>'+
+          '<div id="registroMsg" style="margin-top:12px;font-size:0.85rem"></div>'+
+        '</div>'
+      );
   }
 
   function exportPDF() {
     var fecha = new Date().toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
     var contenido = document.getElementById(mode==='inicial'?'resultsContainer':'reevalResultsContainer').innerHTML;
+    // número de registro guardado tras enviar (si existe)
+    var numRegistroEl = document.getElementById('registroMsg') || document.getElementById('registroMsgR');
+    var numRegistro = '';
+    if(!demoMode && numRegistroEl){
+      var match = numRegistroEl.innerHTML.match(/URY-[A-Z0-9\-]+/);
+      if(match) numRegistro = match[0];
+    }
+    var encabezadoRegistro = numRegistro
+      ? '<div style="background:#1a6bb5;color:white;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem">'+
+          '📋 <strong>N° de Registro:</strong> <span style="font-size:1.1rem;font-family:monospace;letter-spacing:1px">'+numRegistro+'</span>'+
+        '</div>'
+      : (demoMode ? '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">🧪 <strong>Modo Demo</strong> — Documento sin valor de registro oficial.</div>' : '');
     var win = window.open('','_blank');
     win.document.write(
       '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
@@ -929,11 +1040,158 @@
       '</style></head><body>'+
       '<h1>🩺 RectalMDT</h1>'+
       '<div class="meta">Fecha: '+fecha+' &nbsp;|&nbsp; Herramienta de soporte de decisión clínica — NCCN v1.2026 · ESMO 2025</div>'+
+      encabezadoRegistro+
       contenido+
       '</body></html>'
     );
     win.document.close();
     setTimeout(function(){ win.print(); }, 500);
+  }
+
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZAgKzrnMyUra1mW59O6BS8ovDIRmXurCtZNWfEXMZBwIxI5pdxTJCbche5vLM1krx9w/exec';
+  var DEPARTAMENTOS = ['Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Montevideo','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'];
+
+  function deptosOptions(){
+    return '<option value="">Seleccionar</option>'+DEPARTAMENTOS.map(function(d){return '<option value="'+d+'">'+d+'</option>';}).join('');
+  }
+
+  function guardarRegistro(){
+    var msg = document.getElementById('registroMsg');
+    var centro = document.getElementById('regCentro').value;
+    var tto = document.getElementById('regTratamiento').value;
+    if(!centro){msg.innerHTML='<span style="color:#c0392b">⚠️ Seleccioná el centro.</span>';return;}
+    if(!tto){msg.innerHTML='<span style="color:#c0392b">⚠️ Ingresá el tratamiento decidido.</span>';return;}
+    msg.innerHTML='<span style="color:#1a6bb5">⏳ Enviando registro...</span>';
+    var recomendacion = document.querySelector('#resultsContainer .result-header .badge') ? document.querySelector('#resultsContainer .result-header .badge').textContent : '';
+    var payload = Object.assign({}, state, {
+      clave: centro,
+      modulo: 'inicial',
+      deptoResidencia: document.getElementById('regDeptoRes').value,
+      deptoNacimiento: document.getElementById('regDeptoNac').value,
+      mdtConcordante: state.regConcordancia || '',
+      tratamientoDecidido: tto,
+      motivoDiscordancia: document.getElementById('regMotivo').value,
+      registroVinculado: document.getElementById('regVinculado').value,
+      recomendacionApp: recomendacion,
+      comorbilidades: state.comorbilidades.join(', ')
+    });
+    fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)})
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(data.ok){
+          msg.innerHTML='<div style="background:#d4edda;border-left:4px solid #27ae60;padding:12px;border-radius:8px;color:#155724">'+
+            '✅ <strong>Registro guardado.</strong><br>'+
+            '📋 Número de registro: <strong style="font-size:1rem">'+data.registro+'</strong><br>'+
+            '<span style="font-size:0.78rem">Guardá este número para la reevaluación post-neoadyuvancia.</span></div>';
+        } else {
+          msg.innerHTML='<span style="color:#c0392b">⚠️ Error: '+data.error+'</span>';
+        }
+      })
+      .catch(function(){msg.innerHTML='<span style="color:#c0392b">⚠️ Error de conexión. Verificá tu internet e intentá de nuevo.</span>';});
+  }
+
+  function guardarRegistroReeval(){
+    var msg = document.getElementById('registroMsgR');
+    var centro = document.getElementById('regCentroR').value;
+    var tto = document.getElementById('regTratamientoR').value;
+    var vinculado = document.getElementById('regVinculadoR').value;
+    if(!centro){msg.innerHTML='<span style="color:#c0392b">⚠️ Seleccioná el centro.</span>';return;}
+    if(!tto){msg.innerHTML='<span style="color:#c0392b">⚠️ Ingresá la decisión del MDT.</span>';return;}
+    if(!vinculado){msg.innerHTML='<span style="color:#c0392b">⚠️ Ingresá el número de registro del paciente.</span>';return;}
+    msg.innerHTML='<span style="color:#1a6bb5">⏳ Enviando registro...</span>';
+    var recomendacion = document.querySelector('#reevalResultsContainer .result-header .badge') ? document.querySelector('#reevalResultsContainer .result-header .badge').textContent : '';
+    var payload = Object.assign({}, state, {
+      clave: centro,
+      modulo: 'reeval',
+      mdtConcordante: state.regConcordanciaR || '',
+      tratamientoDecidido: tto,
+      motivoDiscordancia: document.getElementById('regMotivoR').value,
+      registroVinculado: vinculado,
+      recomendacionApp: recomendacion,
+      comorbilidades: state.comorbilidades.join(', ')
+    });
+    fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify(payload)})
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(data.ok){
+          msg.innerHTML='<div style="background:#d4edda;border-left:4px solid #27ae60;padding:12px;border-radius:8px;color:#155724">'+
+            '✅ <strong>Reevaluación registrada.</strong><br>'+
+            '📋 Número: <strong>'+data.registro+'</strong><br>'+
+            '<span style="font-size:0.78rem">Vinculado al registro: '+vinculado+'</span></div>';
+        } else {
+          msg.innerHTML='<span style="color:#c0392b">⚠️ Error: '+data.error+'</span>';
+        }
+      })
+      .catch(function(){msg.innerHTML='<span style="color:#c0392b">⚠️ Error de conexión.</span>';});
+  }
+
+  var registroPrevio = null; // datos traídos de la planilla
+
+  function buscarRegistroPrevio() {
+    var num = document.getElementById('buscarRegistroInput').value.trim().toUpperCase();
+    var msg = document.getElementById('busquedaMsg');
+    if(!num){ msg.innerHTML='<span style="color:#c0392b">⚠️ Ingresá el número de registro.</span>'; return; }
+    msg.innerHTML='<span style="color:#1a6bb5">⏳ Buscando...</span>';
+    fetch(SCRIPT_URL + '?action=buscar&registro=' + encodeURIComponent(num))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.ok && data.datos){
+          registroPrevio = data.datos;
+          var d = data.datos;
+          var html = '<table style="width:100%;border-collapse:collapse;font-size:0.83rem">';
+          var rows = [
+            ['cT / cN', (d.cT||'-') + ' / ' + (d.cN||'-')],
+            ['Altura', d.altura ? d.altura + ' cm' : '-'],
+            ['CRM', d.crm||'-'],
+            ['EMVI', d.emvi||'-'],
+            ['MMR', d.mmr||'-'],
+            ['Esquema recomendado', d.recomendacionApp||'-'],
+            ['Tratamiento decidido MDT', d.tratamientoDecidido||'-'],
+            ['Centro', d.centro||'-'],
+            ['Fecha de registro', d.fecha||'-']
+          ];
+          rows.forEach(function(r){
+            html += '<tr><td style="padding:4px 8px;color:#6c757d;white-space:nowrap">'+r[0]+'</td><td style="padding:4px 8px;font-weight:500">'+r[1]+'</td></tr>';
+          });
+          html += '</table>';
+          document.getElementById('resumenPrevioContent').innerHTML = html;
+          document.getElementById('resumenPrevioContainer').style.display = 'block';
+          msg.innerHTML = '';
+          // verificar discordancia de esquema
+          checkDiscordanciaEsquema();
+        } else {
+          msg.innerHTML='<span style="color:#c0392b">⚠️ Registro no encontrado. Verificá el número o continuá sin registro.</span>';
+          document.getElementById('resumenPrevioContainer').style.display = 'none';
+        }
+      })
+      .catch(function(){ msg.innerHTML='<span style="color:#c0392b">⚠️ Error de conexión.</span>'; });
+  }
+
+  function checkDiscordanciaEsquema() {
+    if(!registroPrevio) return;
+    var esquemaActual = state.esquemaRecibido || '';
+    var recomendado = (registroPrevio.tratamientoDecidido || registroPrevio.recomendacionApp || '').toLowerCase();
+    var mapas = { rapido:'rapido', prodige:'prodige', tnt_prodige:'prodige', opra:'opra', tnt_opra:'opra', lcrt:'lcrt', dostarlimab:'dostarlimab', prospect:'prospect', prospect_folfox:'prospect' };
+    var esquemaKey = (mapas[esquemaActual]||esquemaActual).toLowerCase();
+    var coincide = recomendado.indexOf(esquemaKey) !== -1;
+    document.getElementById('discordanciaEsquemaField').style.display = (!coincide && esquemaActual) ? 'block' : 'none';
+  }
+
+  function continuarSinRegistro() {
+    registroPrevio = null;
+    document.getElementById('reevalBusqueda').style.display = 'none';
+    document.querySelectorAll('#reevalModule .step').forEach(function(s,i){ s.classList.toggle('active', i===0); });
+    document.querySelector('.step-indicator').style.display = 'flex';
+    updateNav(); updateDots(); updateProgress();
+    window.scrollTo(0,0);
+  }
+
+  function continuarConRegistro() {
+    document.getElementById('reevalBusqueda').style.display = 'none';
+    document.querySelectorAll('#reevalModule .step').forEach(function(s,i){ s.classList.toggle('active', i===0); });
+    document.querySelector('.step-indicator').style.display = 'flex';
+    updateNav(); updateDots(); updateProgress();
+    window.scrollTo(0,0);
   }
 
   function runReevalAnalysis() {
@@ -952,7 +1210,38 @@
       '</div>'+
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
-      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>';
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+      (demoMode ?
+        '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong> No se genera ningún registro en la base de datos. Volvé al inicio y elegí "Reevaluación" para registrar un caso real.</div>'
+      :
+        '<div id="registroModuleReeval" class="card" style="margin-top:16px">'+
+          '<div class="card-title purple">📋 Registro MDT — Reevaluación</div>'+
+          '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">'+
+            '⚠️ <strong>Este registro se enviará a la base de datos nacional RectalMDT.</strong> Usarlo únicamente para casos reales discutidos en MDT.'+
+          '</div>'+
+          '<div class="field"><label>Centro asistencial</label><select id="regCentroR"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
+          '<div class="field"><label>N° de registro del paciente</label><input type="text" id="regVinculadoR" placeholder="Ej: URY-CLINICAS-20260309-0001" /></div>'+
+          '<div class="field"><label>¿El MDT decidió lo recomendado por la app?</label>'+
+            '<div class="radio-group" id="concordanciaGroupR">'+
+              '<div class="radio-option" data-field="regConcordanciaR" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — concordante</div></div>'+
+              '<div class="radio-option" data-field="regConcordanciaR" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — se decidió otro manejo</div></div>'+
+              '<div class="radio-option" data-field="regConcordanciaR" data-val="modificado"><div class="radio-dot"></div><div class="label-text">⚠️ Modificado por recursos o comorbilidades</div></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="field"><label>Decisión final del MDT</label><input type="text" id="regTratamientoR" placeholder="Ej: W&W, cirugía TME, LAR, APR..." /></div>'+
+          '<div class="field"><label>Motivo de discordancia / modificación (si aplica)</label>'+
+            '<select id="regMotivoR"><option value="">Seleccionar (opcional)</option>'+
+            '<option value="ps_limitado">Estado funcional del paciente</option>'+
+            '<option value="preferencia_paciente">Preferencia del paciente</option>'+
+            '<option value="comorbilidades">Comorbilidades</option>'+
+            '<option value="sin_recursos">Sin recursos disponibles</option>'+
+            '<option value="otro">Otro</option>'+
+            '</select>'+
+          '</div>'+
+          '<button class="btn btn-purple" style="width:100%;margin-top:8px" onclick="guardarRegistroReeval()">💾 Guardar y enviar registro</button>'+
+          '<div id="registroMsgR" style="margin-top:12px;font-size:0.85rem"></div>'+
+        '</div>'
+      );
   }
 </script>
 </body>
