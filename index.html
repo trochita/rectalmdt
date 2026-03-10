@@ -159,6 +159,33 @@
     <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
   </div>
 
+  <!-- DEMO SELECTOR -->
+  <div id="demoScreen" style="display:none">
+    <div class="home-header">
+      <h2>🧪 Modo Demo</h2>
+      <p>Elegí el módulo a explorar — no se generará ningún registro</p>
+    </div>
+    <div class="home-screen">
+      <div class="mode-card" id="btnDemoInicial">
+        <div class="mode-icon">🔍</div>
+        <div>
+          <div class="mode-title">Evaluación Inicial</div>
+          <div class="mode-desc">Estadificación, RMN pre-tratamiento y decisión de esquema neoadyuvante. Sin registro.</div>
+        </div>
+      </div>
+      <div class="mode-card purple-card" id="btnDemoReeval">
+        <div class="mode-icon">🔄</div>
+        <div>
+          <div class="mode-title">Reevaluación Post-Neoadyuvancia</div>
+          <div class="mode-desc">Evaluación de respuesta al tratamiento. RMN, tacto rectal, endoscopía. Sin registro.</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-secondary" onclick="goHome()">← Volver al inicio</button>
+    </div>
+  </div>
+
   <!-- MÓDULO INICIAL -->
   <div id="inicialModule" style="display:none">
     <div class="step-indicator">
@@ -363,8 +390,7 @@
           <input type="text" id="buscarRegistroInput" placeholder="Ej: URY-CLINICAS-20260309-0001" style="text-transform:uppercase" />
         </div>
         <button class="btn btn-purple" style="width:100%;margin-bottom:10px" onclick="buscarRegistroPrevio()">🔍 Buscar registro</button>
-        <button class="btn btn-secondary" style="width:100%;margin-bottom:10px" onclick="continuarSinRegistro()">Continuar sin registro →</button>
-        <button class="btn" style="width:100%;background:#f8f9fa;border:2px dashed #adb5bd;color:#6c757d" onclick="activarDemoReeval()">🧪 Modo Demo — explorar sin registrar</button>
+        <button class="btn btn-secondary" style="width:100%" onclick="continuarSinRegistro()">Continuar sin registro →</button>
         <div id="busquedaMsg" style="margin-top:12px;font-size:0.85rem"></div>
       </div>
       <div id="resumenPrevioContainer" style="display:none">
@@ -562,7 +588,9 @@
   var demoMode = false;
   document.getElementById('btnInicial').addEventListener('click', function(){ demoMode = false; startMode('inicial'); });
   document.getElementById('btnReeval').addEventListener('click', function(){ demoMode = false; startMode('reeval'); });
-  document.getElementById('btnDemo').addEventListener('click', function(){ demoMode = true; startMode('inicial'); });
+  document.getElementById('btnDemo').addEventListener('click', function(){ showDemoScreen(); });
+  document.getElementById('btnDemoInicial').addEventListener('click', function(){ demoMode = true; startMode('inicial'); });
+  document.getElementById('btnDemoReeval').addEventListener('click', function(){ demoMode = true; startMode('reeval'); });
   document.getElementById('btnBack').addEventListener('click', goBack);
   document.getElementById('btnNext').addEventListener('click', goNext);
   document.getElementById('btnAnalyze').addEventListener('click', runAnalysis);
@@ -644,9 +672,20 @@
     window.scrollTo(0,0);
   }
 
+  function showDemoScreen() {
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('demoScreen').style.display = 'block';
+    document.getElementById('inicialModule').style.display = 'none';
+    document.getElementById('reevalModule').style.display = 'none';
+    document.getElementById('navButtons').style.display = 'none';
+    document.getElementById('headerSubtitle').textContent = 'Modo Demo';
+    window.scrollTo(0,0);
+  }
+
   function goHome() {
-    mode = null; currentStep = 0;
+    mode = null; currentStep = 0; demoMode = false;
     document.getElementById('homeScreen').style.display = 'block';
+    document.getElementById('demoScreen').style.display = 'none';
     document.getElementById('inicialModule').style.display = 'none';
     document.getElementById('reevalModule').style.display = 'none';
     document.getElementById('headerSubtitle').textContent = 'Soporte de decisión — Cáncer de Recto';
