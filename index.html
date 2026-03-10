@@ -152,7 +152,7 @@
         <div class="mode-icon">🧪</div>
         <div>
           <div class="mode-title" style="color:var(--gray)">Modo Demo</div>
-          <div class="mode-desc">Explorar la app sin generar registros en la base de datos nacional. Los resultados son idénticos pero no se guarda ningún caso.</div>
+          <div class="mode-desc">Explorar la app sin generar registros. Evaluación inicial y reevaluación disponibles. Los resultados son idénticos pero no se guarda ningún caso en la base de datos.</div>
         </div>
       </div>
     </div>
@@ -363,7 +363,8 @@
           <input type="text" id="buscarRegistroInput" placeholder="Ej: URY-CLINICAS-20260309-0001" style="text-transform:uppercase" />
         </div>
         <button class="btn btn-purple" style="width:100%;margin-bottom:10px" onclick="buscarRegistroPrevio()">🔍 Buscar registro</button>
-        <button class="btn btn-secondary" style="width:100%" onclick="continuarSinRegistro()">Continuar sin registro →</button>
+        <button class="btn btn-secondary" style="width:100%;margin-bottom:10px" onclick="continuarSinRegistro()">Continuar sin registro →</button>
+        <button class="btn" style="width:100%;background:#f8f9fa;border:2px dashed #adb5bd;color:#6c757d" onclick="activarDemoReeval()">🧪 Modo Demo — explorar sin registrar</button>
         <div id="busquedaMsg" style="margin-top:12px;font-size:0.85rem"></div>
       </div>
       <div id="resumenPrevioContainer" style="display:none">
@@ -1175,6 +1176,12 @@
     var esquemaKey = (mapas[esquemaActual]||esquemaActual).toLowerCase();
     var coincide = recomendado.indexOf(esquemaKey) !== -1;
     document.getElementById('discordanciaEsquemaField').style.display = (!coincide && esquemaActual) ? 'block' : 'none';
+  }
+
+  function activarDemoReeval() {
+    demoMode = true;
+    document.getElementById('headerSubtitle').textContent = 'Reevaluación Post-Neoadyuvancia · 🧪 MODO DEMO';
+    continuarSinRegistro();
   }
 
   function continuarSinRegistro() {
