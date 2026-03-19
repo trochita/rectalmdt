@@ -98,6 +98,11 @@
     .resp-near { background: #fff3cd; border-left: 5px solid var(--warning); }
     .resp-partial { background: #fde8e8; border-left: 5px solid var(--danger); }
     .resp-noresp { background: #f5d0d0; border-left: 5px solid #7b0000; }
+    .risk-mdt { background: #fff0f5; border-left: 5px solid #9b2335; }
+    .badge-mdt { background: #f5d0db; color: #6b0020; }
+    .corredor-box { background: #fff8fc; border: 1.5px solid #e0a0b8; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+    .corredor-item { font-size: 0.82rem; color: #4a0020; padding: 6px 0; border-bottom: 1px solid #f0d0e0; line-height: 1.4; }
+    .corredor-item:last-child { border-bottom: none; }
     .treatment-box { background: white; border-radius: 8px; padding: 14px; margin-top: 12px; }
     .treatment-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--primary-dark); }
     .treatment-desc { font-size: 0.82rem; color: #495057; line-height: 1.5; }
@@ -222,6 +227,17 @@
             <div class="ecog-item" data-val="3"><div class="ecog-num">3</div><div class="ecog-desc">En cama &gt;50% día</div></div>
             <div class="ecog-item" data-val="4"><div class="ecog-num">4</div><div class="ecog-desc">Postrado total</div></div>
           </div>
+          <!-- ECOG 2 subclasificación — aparece condicionalmente -->
+          <div id="ecog2SubField" style="display:none;margin-top:12px">
+            <div style="background:#fff8e1;border-left:4px solid #e67e22;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.82rem;color:#7d4e00">
+              ⚠️ <strong>ECOG 2 detectado</strong> — especificar causa principal para ajustar la recomendación
+            </div>
+            <div class="radio-group">
+              <div class="radio-option" data-field="ecog2causa" data-val="tumor"><div class="radio-dot"></div><div class="label-text"><strong>Por síntomas del tumor</strong> — dolor, obstrucción, sangrado (reversible con tratamiento)</div></div>
+              <div class="radio-option" data-field="ecog2causa" data-val="comorbilidad"><div class="radio-dot"></div><div class="label-text"><strong>Por comorbilidades basales</strong> — cardíacas, pulmonares, neurológicas (no reversible)</div></div>
+              <div class="radio-option" data-field="ecog2causa" data-val="mixto"><div class="radio-dot"></div><div class="label-text">Mixto / No claro</div></div>
+            </div>
+          </div>
         </div>
         <div class="field">
           <label>Estado MMR / MSI</label>
@@ -316,6 +332,36 @@
           <div class="radio-group">
             <div class="radio-option" data-field="depositos" data-val="no"><div class="radio-dot"></div><div class="label-text">No</div></div>
             <div class="radio-option" data-field="depositos" data-val="si"><div class="radio-dot"></div><div class="label-text">Sí</div></div>
+          </div>
+        </div>
+        <!-- CRITERIOS cT1 — se muestran solo si cT1 seleccionado -->
+        <div id="ct1CriteriosBlock" style="display:none">
+          <div style="background:#fff8e1;border-left:4px solid #e67e22;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:0.82rem;color:#7d4e00">
+            🔬 <strong>cT1 detectado</strong> — completar criterios histológicos para decidir TEM/TAMIS vs TME
+          </div>
+          <div class="field">
+            <label>Grado de diferenciación (biopsia)</label>
+            <div class="radio-group">
+              <div class="radio-option" data-field="histoGrado" data-val="bien"><div class="radio-dot"></div><div class="label-text"><strong>Bien diferenciado</strong> (G1) — favorable</div></div>
+              <div class="radio-option" data-field="histoGrado" data-val="moderado"><div class="radio-dot"></div><div class="label-text"><strong>Moderadamente diferenciado</strong> (G2) — favorable</div></div>
+              <div class="radio-option" data-field="histoGrado" data-val="poco"><div class="radio-dot"></div><div class="label-text"><strong>Poco diferenciado</strong> (G3) — ⚠️ desfavorable, contraindica TEM/TAMIS</div></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Invasión linfovascular (ILV)</label>
+            <div class="radio-group">
+              <div class="radio-option" data-field="ilv" data-val="negativo"><div class="radio-dot"></div><div class="label-text">Negativa — favorable</div></div>
+              <div class="radio-option" data-field="ilv" data-val="positivo"><div class="radio-dot"></div><div class="label-text">Positiva — ⚠️ desfavorable, contraindica TEM/TAMIS</div></div>
+              <div class="radio-option" data-field="ilv" data-val="no_evaluada"><div class="radio-dot"></div><div class="label-text">No evaluada en biopsia</div></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Budding tumoral</label>
+            <div class="radio-group">
+              <div class="radio-option" data-field="budding" data-val="ausente"><div class="radio-dot"></div><div class="label-text">Ausente / Bajo (Bd1) — favorable</div></div>
+              <div class="radio-option" data-field="budding" data-val="alto"><div class="radio-dot"></div><div class="label-text">Alto (Bd2-3) — ⚠️ desfavorable</div></div>
+              <div class="radio-option" data-field="budding" data-val="no_evaluado"><div class="radio-dot"></div><div class="label-text">No evaluado</div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -580,6 +626,8 @@
     gangliosLaterales:null,depositos:null,cea:null,distanciaDRE:null,dre:null,
     tc:null,observaciones:'',apiKey:null,scrtDisponible:null,
     paridad:null,
+    histoGrado:null,ilv:null,budding:null,
+    ecog2causa:null,
     esquemaRecibido:null,semanasPost:null,ceaPost:null,objetivoTto:null,prospectResp:null,
     mrtrg:null,dwi:null,crmPost:null,gangliosPost:null,
     drePost:null,fijacionPost:null,endoPost:null,biopsiaPost:null,obsReeval:''
@@ -612,6 +660,11 @@
         document.getElementById('prospectRespField').style.display = (val === 'prospect_folfox') ? 'block' : 'none';
         if(val !== 'prospect_folfox') state.prospectResp = null;
       }
+      if(field === 'cT'){
+        var ct1Block = document.getElementById('ct1CriteriosBlock');
+        if(ct1Block) ct1Block.style.display = (val === 'cT1') ? 'block' : 'none';
+        if(val !== 'cT1'){ state.histoGrado=null; state.ilv=null; state.budding=null; }
+      }
       if(field === 'regConcordancia' || field === 'regConcordanciaR'){ state[field] = val; }
     });
   });
@@ -630,6 +683,9 @@
       state.ecog = parseInt(el.dataset.val);
       document.querySelectorAll('.ecog-item').forEach(function(e){ e.classList.remove('selected'); });
       el.classList.add('selected');
+      var ecog2Block = document.getElementById('ecog2SubField');
+      if(ecog2Block) ecog2Block.style.display = (state.ecog === 2) ? 'block' : 'none';
+      if(state.ecog !== 2) state.ecog2causa = null;
     });
   });
 
@@ -792,65 +848,228 @@
 
   function analyzeRules() {
     var s=state;
-    if(s.mmr==='dMMR_MSI-H') return {riesgo:'special',riesgoLabel:'dMMR / MSI-H',esquema:'Checkpoint inhibitor neoadyuvante (dostarlimab u otros — 6 meses)',justificacion:'Tumor con déficit de reparación de DNA. Cercek NEJM 2022: 100% cCR en 12/12 pacientes con dostarlimab. Opciones validadas: dostarlimab, nivolumab, pembrolizumab, cemiplimab (NCCN v1.2026). No debe recibir QRT convencional como primera línea en dMMR.',evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],ww:true,mdtPreguntas:['¿Confirmación IHQ/PCR dMMR/MSI-H?','¿Ausencia mutación BRAF V600E?','¿Disponibilidad del checkpoint inhibitor elegido?','¿Candidato a W&W si logra cCR?','¿Plan de seguimiento cada 3 meses (RMN + endoscopía)?']};
-    if(s.tc==='M1_indeterminado') return {riesgo:'veryhigh',riesgoLabel:'Lesión a distancia indeterminada',esquema:'Completar estadificación antes de iniciar tratamiento',justificacion:'Lesión de naturaleza incierta en TC. NCCN v1.2026 recomienda RM hepática con agente hepatobiliar (Eovist/Primovist) para lesiones hepáticas dudosas, PET-CT para sospecha sistémica, o biopsia guiada si necesario. No iniciar neoadyuvancia hasta definir estadio.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿RM hepática con agente hepatobiliar?','¿PET-CT si sospecha extrahepática?','¿Biopsia guiada de lesión dudosa?','¿Timing: completar estadificación antes de semana 2?']};
-    if(s.tc==='M1_multiple'||s.gangliosLaterales==='iliaco_externo') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 irresecables / M1c ganglionar',esquema:'Quimioterapia sistémica paliativa ± RT sintomática',justificacion:s.gangliosLaterales==='iliaco_externo'?'Ganglios ilíacos externos o comunes sospechosos = M1c (fuera del campo linfático primario del recto). Manejo sistémico. Cirugía con intención curativa no indicada de entrada.':'Enfermedad metastásica irresecable. Objetivo paliativo/conversión. FOLFOX/FOLFIRI ± bevacizumab o cetuximab/panitumumab según RAS/BRAF.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Estado mutacional RAS/BRAF/HER2/MSI?','¿Confirmar ilíacos externos con PET-CT?','¿Síntomas del primario que requieran RT local?','¿Objetivo: paliativo vs conversión a resecabilidad?']};
-    if(s.tc==='M1_nodulo_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'M1a — Nódulo pulmonar solitario resecable',esquema:'MDT multidisciplinario: SBRT / cirugía torácica / ablación térmica + manejo del primario rectal',justificacion:'Nódulo pulmonar solitario resecable. NCCN v1.2026 (REC-C/REC-E): SBRT, resección quirúrgica y ablación térmica son opciones equivalentes en lesiones ≤3cm. Pronóstico mejor que M1 hepático múltiple. Puede tratarse con intención curativa simultánea o staged.',evidencia:['NCCN v1.2026 REC-C/REC-E','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Evaluación por cirujano torácico o radioterapeuta para SBRT?','¿Confirmar naturaleza maligna del nódulo (PET-CT)?','¿Secuencia: primario rectal primero o sincrónico?','¿Reserva funcional pulmonar?','¿Lesión en localización accesible para ablación?']};
-    if(s.tc==='M1_hepatico'||s.tc==='M1_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 potencialmente resecables',esquema:'QT sistémica de inducción (FOLFOX/FOLFIRINOX) → reevaluar resecabilidad → cirugía staged o simultánea',justificacion:'Oligometástasis potencialmente resecable. NCCN v1.2026: QT de inducción para confirmar biología favorable y facilitar resección. FOLFIRINOX como opción en pacientes aptos. Puede tratarse con intención curativa.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Resecabilidad evaluada por cirujano hepático/torácico?','¿Número y localización de metástasis?','¿Secuencia: primario vs metástasis (staged vs simultáneo)?','¿RAS/BRAF/MSI/HER2?','¿FOLFIRINOX vs FOLFOX según estado físico?']};
-    if((s.cT==='cT1'||s.cT==='cT2')&&s.cN==='N0'&&s.crm==='libre'&&(s.emvi==='negativo'||!s.emvi)){
-      var fertilityQLow = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir implicancias de la cirugía sobre función reproductiva'] : [];
-      return {riesgo:'low',riesgoLabel:'Riesgo Bajo',esquema:s.cT==='cT1'?'TEM/TAMIS si criterios favorables — o TME':'Cirugía primaria (TME) sin neoadyuvancia',justificacion:s.cT==='cT1'?'cT1N0 CRM libre. Si criterios favorables (bien diferenciado, sin invasión linfovascular) TEM/TAMIS válido.':'cT2N0 CRM libre sin EMVI. Recurrencia local <5% con TME. No requiere neoadyuvancia. NCCN v1.2026: perfilado molecular post-cirugía — si PIK3CA alterado → aspirina 100-162mg/día × 3 años.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:['¿Grado de diferenciación?','¿Invasión linfovascular en biopsia?','¿Abordaje: laparoscópico/robótico/abierto?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF)?'].concat(fertilityQLow)};
+
+    // ── Chequeo metastásico (siempre primero) ─────────────────────────────
+    if(s.tc==='M1_indeterminado') return {riesgo:'veryhigh',riesgoLabel:'Lesión a distancia indeterminada',esquema:'Completar estadificación antes de iniciar tratamiento',justificacion:'Lesión de naturaleza incierta en TC. NCCN v1.2026 recomienda RM hepática con agente hepatobiliar para lesiones hepáticas dudosas, PET-CT para sospecha sistémica, o biopsia guiada si necesario. No iniciar neoadyuvancia hasta definir estadio.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿RM hepática con agente hepatobiliar?','¿PET-CT si sospecha extrahepática?','¿Biopsia guiada de lesión dudosa?','¿Timing: completar estadificación antes de semana 2?']};
+    if(s.tc==='M1_multiple'||s.gangliosLaterales==='iliaco_externo') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 irresecables / M1c ganglionar',esquema:'Quimioterapia sistémica paliativa ± RT sintomática',justificacion:s.gangliosLaterales==='iliaco_externo'?'Ganglios ilíacos externos o comunes sospechosos = M1c. Manejo sistémico. Cirugía con intención curativa no indicada de entrada.':'Enfermedad metastásica irresecable. Objetivo paliativo/conversión. FOLFOX/FOLFIRI ± bevacizumab o cetuximab/panitumumab según RAS/BRAF.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Estado mutacional RAS/BRAF/HER2/MSI?','¿Confirmar ilíacos externos con PET-CT?','¿Síntomas del primario que requieran RT local?','¿Objetivo: paliativo vs conversión a resecabilidad?']};
+    if(s.tc==='M1_nodulo_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'M1a — Nódulo pulmonar solitario resecable',esquema:'PASO 1: Confirmar naturaleza metastásica (PET-CT/biopsia). PASO 2 (si confirmado): MDT — SBRT / cirugía torácica / ablación.',justificacion:'Nódulo pulmonar solitario resecable. NCCN v1.2026: confirmar que el nódulo es metástasis y no un segundo primario pulmonar antes de SBRT/cirugía/ablación. Riesgo especialmente relevante en pacientes con tabaquismo. Herramientas: PET-CT (sensibilidad 90%), biopsia transparietal o broncoscopía según localización.',evidencia:['NCCN v1.2026 REC-C/REC-E','ESMO mCRC 2025'],ww:false,noduloPulmonar:true,mdtPreguntas:['🔴 PRIMERO: ¿PET-CT o biopsia para confirmar naturaleza metastásica del nódulo?','¿Historia de tabaquismo? (aumenta probabilidad de segundo primario pulmonar)','¿Morfología del nódulo en TC: espiculado, sólido, tamaño, localización?','¿Si confirmado metástasis: evaluación por cirujano torácico o radioterapeuta SBRT?','¿Reserva funcional pulmonar (espirometría)?','¿Secuencia de tratamiento: primario rectal primero vs sincrónico?','¿Localización accesible para biopsia o ablación?']};
+    if(s.tc==='M1_hepatico'||s.tc==='M1_pulmonar') return {riesgo:'veryhigh',riesgoLabel:'Estadio IV — M1 potencialmente resecables',esquema:'QT sistémica de inducción (FOLFOX/FOLFIRINOX) → reevaluar resecabilidad → cirugía staged o simultánea',justificacion:'Oligometástasis potencialmente resecable. NCCN v1.2026: QT de inducción para confirmar biología favorable y facilitar resección. FOLFIRINOX como opción en pacientes aptos.',evidencia:['NCCN v1.2026','ESMO mCRC 2025'],ww:false,mdtPreguntas:['¿Resecabilidad evaluada por cirujano hepático/torácico?','¿Número y localización de metástasis?','¿Secuencia: primario vs metástasis (staged vs simultáneo)?','¿RAS/BRAF/MSI/HER2?','¿FOLFIRINOX vs FOLFOX según estado físico?']};
+
+    // ── dMMR / MSI-H: solo en M0 confirmado ──────────────────────────────
+    if(s.mmr==='dMMR_MSI-H' && s.tc==='M0') {
+      var esCT1N0 = s.cT==='cT1' && s.cN==='N0';
+      if(esCT1N0) {
+        return {riesgo:'low',riesgoLabel:'Riesgo Bajo — dMMR/MSI-H cT1N0',esquema:'Cirugía directa (TEM/TAMIS o TME) — Dostarlimab NO indicado en cT1N0',justificacion:'dMMR/MSI-H confirmado, pero estadio cT1N0. El trial de Cercek (NEJM 2022) incluyó solo cT2-T4. En cT1N0 el pronóstico con cirugía es excelente y no hay evidencia que respalde inmunoterapia neoadyuvante.',evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿Criterios favorables para TEM/TAMIS (grado, ILV, margen)?','¿Confirmación IHQ/PCR dMMR/MSI-H?','¿Perfilado molecular post-resección?','¿Seguimiento estándar post-resección?']};
+      }
+      var fertilityHardStop = (s.sexo==='F' && s.paridad==='no_satisfecha');
+      var fertilityDMMR = fertilityHardStop ? ['⚠️ ATENCIÓN: Mujer con deseo de fertilidad y dMMR — derivación urgente a medicina reproductiva ANTES de iniciar dostarlimab.','¿Preservación de óvulos/embriones antes de iniciar tratamiento?'] : [];
+      var dostaMDT = ['¿Confirmación IHQ/PCR dMMR/MSI-H (dual método)?','¿Ausencia de mutación BRAF V600E (Lynch vs esporádico)?','¿Estadio ≥cT2 confirmado?','¿Disponibilidad del checkpoint inhibitor elegido?','¿Candidato a W&W si logra cCR a los 6 meses?','¿Plan de seguimiento: RMN + endoscopía + DRE cada 3 meses × 2 años?','⚠️ mrTRG puede ser menos confiable en respuesta inmunomediada — considerar PET-CT en reevaluación'].concat(fertilityDMMR);
+      return {riesgo:'special',riesgoLabel:'dMMR / MSI-H — M0 confirmado',esquema:'Checkpoint inhibitor neoadyuvante: dostarlimab 500mg c/3 sem × 6 meses (u opciones equivalentes: nivolumab, pembrolizumab, cemiplimab — NCCN v1.2026)',justificacion:'Tumor con déficit de reparación de DNA, enfermedad localizada M0. Cercek NEJM 2022: 100% cCR con dostarlimab. Puede evitar quimiorradioterapia y cirugía. NO debe recibir QRT convencional como primera línea en dMMR. ⚠️ El patrón de regresión inmunomediada puede generar edema inflamatorio que mimetiza tumor en RMN.',evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],ww:true,fertilityHardStop:fertilityHardStop,mdtPreguntas:dostaMDT};
     }
-    var crmInv=s.crm==='invadido', crmAmen=s.crm==='amenazado', n2=s.cN==='N2', t4b=s.cT==='cT4b', t4a=s.cT==='cT4a', t3cd=s.cT==='cT3c';
+    if(s.mmr==='pendiente' && s.tc==='M0') {
+      var esUrgente = s.cT==='cT4b' || s.crm==='invadido';
+      if(!esUrgente) {
+        return {riesgo:'intermediate',riesgoLabel:'MMR pendiente — Completar antes de decidir',esquema:'⚠️ HARD STOP: No iniciar neoadyuvancia hasta conocer el estado MMR/MSI',justificacion:'El estado MMR/MSI determina el esquema de manera crítica: dMMR → inmunoterapia; pMMR → algoritmo estándar. La espera del resultado (7-10 días IHQ) está justificada en casos no urgentes.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿Plataforma disponible: IHQ (MLH1/MSH2/MSH6/PMS2) vs PCR-MSI?','¿Tiempo estimado de resultado?','¿Urgencia clínica que justifique iniciar sin resultado?','¿Si IHQ no disponible: derivar para PCR-MSI?']};
+      }
+    }
+
+    // ── Riesgo bajo cT1/cT2 N0 ────────────────────────────────────────────
+    if((s.cT==='cT1'||s.cT==='cT2') && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi)) {
+      var fertilityQLow = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir implicancias de la cirugía sobre función reproductiva'] : [];
+      if(s.cT==='cT1') {
+        var histoFav = s.histoGrado && (s.histoGrado==='bien'||s.histoGrado==='moderado');
+        var ilvNeg = s.ilv==='negativo';
+        var budNeg = s.budding==='ausente';
+        var temtamisMalo = s.histoGrado==='poco' || s.ilv==='positivo' || s.budding==='alto';
+        var temtamisOk = histoFav && ilvNeg && (budNeg||!s.budding);
+        var esquemacT1, justcT1, mdtcT1;
+        if(temtamisMalo) {
+          esquemacT1='TME (cirugía radical) — criterios desfavorables para TEM/TAMIS';
+          justcT1='cT1N0 CRM libre. Factor de alto riesgo histológico presente (poco diferenciado / ILV positivo / budding alto): TEM/TAMIS contraindicado. Riesgo de N+ hasta 15-25%. Indicación de TME estándar.';
+          mdtcT1=['⚠️ Factor de alto riesgo histológico presente — TME recomendado','¿Abordaje: laparoscópico/robótico vs abierto?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityQLow);
+        } else if(temtamisOk) {
+          esquemacT1='TEM/TAMIS — criterios favorables confirmados';
+          justcT1='cT1N0 CRM libre. Criterios histológicos favorables: bien/moderadamente diferenciado, ILV negativa, budding bajo. Riesgo de N+ <5%. TEM/TAMIS válido con márgenes ≥1mm. Si márgenes comprometidos → completar con TME.';
+          mdtcT1=['¿Márgenes de resección ≥1mm en pieza?','¿Si margen comprometido: completar con TME?','¿Abordaje TEM vs TAMIS según localización?','¿Perfilado molecular post-resección?','¿Seguimiento: RMN + endoscopía cada 6 meses × 3 años?'].concat(fertilityQLow);
+        } else {
+          esquemacT1='⚠️ Datos insuficientes para decidir TEM/TAMIS vs TME — completar histología';
+          justcT1='cT1N0 CRM libre. Para decidir entre TEM/TAMIS y TME se requieren: grado de diferenciación, invasión linfovascular (ILV) y budding tumoral. Sin estos datos la recomendación no puede completarse de forma segura.';
+          mdtcT1=['🔴 COMPLETAR ANTES DE DECIDIR: grado histológico','🔴 COMPLETAR: invasión linfovascular (ILV)','🔴 COMPLETAR: budding tumoral','¿Cirujano con experiencia en TEM/TAMIS disponible?'].concat(fertilityQLow);
+        }
+        return {riesgo:'low',riesgoLabel:'Riesgo Bajo — cT1N0',esquema:esquemacT1,justificacion:justcT1,evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:mdtcT1};
+      }
+      return {riesgo:'low',riesgoLabel:'Riesgo Bajo — cT2N0',esquema:'Cirugía primaria (TME) sin neoadyuvancia',justificacion:'cT2N0 CRM libre sin EMVI. Recurrencia local <5% con TME de calidad. No requiere neoadyuvancia. NCCN v1.2026: perfilado molecular post-cirugía — si PIK3CA alterado → aspirina 100-162mg/día × 3 años.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,pikcaAlert:true,mdtPreguntas:['¿Grado de diferenciación?','¿Invasión linfovascular en biopsia?','¿Abordaje: laparoscópico/robótico/abierto?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityQLow)};
+    }
+
+    // ── Variables de riesgo ───────────────────────────────────────────────
+    var crmInv=s.crm==='invadido', crmAmen=s.crm==='amenazado', n2=s.cN==='N2';
+    var t4b=s.cT==='cT4b', t4a=s.cT==='cT4a', t3cd=s.cT==='cT3c';
     var gangliosLat=s.gangliosLaterales==='sospechoso', depositos=s.depositos==='si';
     var fit=s.ecog!=null&&s.ecog<=1&&!s.comorbilidades.includes('neuropatia')&&!s.comorbilidades.includes('renal');
     var preservacion=s.preservacion==='si';
-    var bajo=parseFloat(s.altura)<5;
-    if(crmInv||t4b||t4a||(s.emvi==='positivo'&&(n2||crmInv||crmAmen))||gangliosLat||depositos){
-      var fertilityQ = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento','¿Derivación a medicina reproductiva urgente?'] : [];
-      var scrtOk = s.scrtDisponible !== 'no';
-      var esquemaMuyAlto, justMuyAlto, evidMuyAlto, mdtMuyAlto;
+    var alturaNum2=parseFloat(s.altura);
+    var bajo=alturaNum2<5, rectoAlto=alturaNum2>10;
+    var emviPos=s.emvi==='positivo', emviSosp=s.emvi==='sospechoso';
+    var n01=s.cN==='N0'||s.cN==='N1';
+    var t3any=s.cT==='cT3a'||s.cT==='cT3c';
+
+    // ════════════════════════════════════════════════════════════════════
+    // NIVEL 1 — CASOS GRISES: MDT OBLIGATORIO ANTES DE DECIDIR
+    // ════════════════════════════════════════════════════════════════════
+
+    // CASO GRIS 1: EMVI sospechoso como bisagra de ruta
+    // T3 N0-N1 CRM libre o amenazado + EMVI sospechoso → no se puede adjudicar corredor
+    if(emviSosp && t3any && n01 && (s.crm==='libre'||crmAmen) && !gangliosLat && !depositos && !t4a && !t4b) {
+      return {
+        riesgo:'mdt_obligatorio',
+        riesgoLabel:'Adjudicación Radiológica MDT Obligatoria',
+        esquema:'La app no puede recomendar un esquema con seguridad en este perfil',
+        justificacion:'Perfil de alta complejidad. La decisión depende de confirmar si el tumor pertenece al corredor intermedio (T3 N0-N1 CRM libre / EMVI negativa) o al corredor de alto riesgo guiado por RM (MRF/CRM amenazada / EMVI positiva). EMVI sospechoso tiene alta variabilidad interobservador y puede cambiar radicalmente la ruta: EMVI+ → PRODIGE 23/TNT; EMVI− + CRM libre → PROSPECT/cirugía directa. ESMO 2025 recomienda TNT cuando MRF amenazada. PROSPECT excluyó tumores dentro de 3mm del margen radial. Revisión obligatoria en MDT con relectura de RM antes de definir cirugía upfront, CRT o TNT.',
+        evidencia:['ESMO CPG 2025','PROSPECT NEJM 2023','NCCN v1.2026'],
+        ww:false,
+        mdtObligatorio:true,
+        corredores:[
+          'Corredor A (EMVI− y CRM libre confirmados): T3 N0-N1 riesgo intermedio → PROSPECT / cirugía directa',
+          'Corredor B (EMVI+ o CRM amenazado confirmados): alto riesgo MRI-driven → PRODIGE 23 / TNT',
+          'Corredor C (EMVI sospechoso persiste tras relectura): discutir en MDT con paciente presente'
+        ],
+        mdtPreguntas:[
+          '🔴 ACCIÓN PRIORITARIA: relectura de RM con radiólogo experto en pelvis — definir EMVI positivo vs negativo',
+          '🔴 Confirmar medición exacta del CRM: ¿libre (>3mm) / amenazado (1-3mm) / invadido?',
+          '¿Secuencias DWI disponibles para relectura? ¿Cortes en los tres planos?',
+          '¿El centro puede garantizar TME de calidad si se decide cirugía directa?',
+          '¿ECOG y comorbilidades permiten FOLFIRINOX si se decide TNT?',
+          '¿Paciente informado sobre la incertidumbre en la clasificación?'
+        ]
+      };
+    }
+
+    // CASO GRIS 2: cT3a N0 CRM amenazado aislado (sin otros factores de muy alto riesgo)
+    // La app llevaría a muy alto riesgo/TNT, pero puede ser LCRT estándar si calidad TME es alta
+    if(s.cT==='cT3a' && s.cN==='N0' && crmAmen && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !t4a && !t4b) {
+      var fertilityGris2 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: si se decide RT pélvica, derivar a medicina reproductiva antes de iniciar'] : [];
+      return {
+        riesgo:'mdt_obligatorio',
+        riesgoLabel:'Adjudicación Radiológica MDT Obligatoria',
+        esquema:'CRM amenazado aislado — la intensidad del tratamiento depende de la confianza en la medición',
+        justificacion:'cT3a N0 CRM amenazado (≤1mm) sin otros factores de alto riesgo. La app llevaría este perfil automáticamente a muy alto riesgo/TNT, pero esa clasificación puede ser excesiva: el CRM es el único factor que eleva el riesgo, y su medición en RMN tiene variabilidad significativa entre centros (±1-2mm en zona crítica). ESMO 2025 recomienda TNT cuando MRF amenazada, pero en ausencia de otros factores algunos grupos optan por LCRT estándar si la calidad del TME es excelente. La decisión depende de la confianza del centro en la medición del CRM y la calidad quirúrgica esperada.',
+        evidencia:['ESMO CPG 2025','NCCN v1.2026'],
+        ww:false,
+        mdtObligatorio:true,
+        corredores:[
+          'Corredor A (CRM ≤1mm confirmado, alta confianza): TNT → PRODIGE 23 o LCRT + FOLFOX',
+          'Corredor B (CRM en zona limítrofe, centro con alta calidad TME): LCRT estándar → reevaluar CRM post',
+          'Corredor C (duda en medición): repetir RMN con protocolo de alta resolución antes de decidir'
+        ],
+        mdtPreguntas:[
+          '🔴 ¿Distancia exacta del tumor a la fascia mesorrectal en mm? ¿En qué plano y nivel se mide?',
+          '🔴 ¿Confianza del radiólogo en la medición? ¿Disponibilidad de segunda lectura?',
+          '¿Calidad del TME esperada en el centro (cirujano con >30 TME/año)?',
+          '¿Si LCRT estándar: plan de reevaluación post con nueva RMN de alta resolución?',
+          '¿Si TNT: PRODIGE 23 (objetivo sistémico) o LCRT estándar (objetivo local)?',
+          '¿Deseo de preservación orgánica del paciente?'
+        ].concat(fertilityGris2)
+      };
+    }
+
+    // CASO GRIS 3: cT2N1 recto bajo (<5cm) + deseo de preservación
+    // Tensión entre PROSPECT (excluye <5cm), OPRA y LCRT estándar — sin opción claramente superior
+    if(s.cT==='cT2' && s.cN==='N1' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && bajo && preservacion && !gangliosLat && !depositos) {
+      var fertilityGris3 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: RT pélvica compromete función reproductiva — discutir preservación ovárica antes de cualquier esquema con RT'] : [];
+      return {
+        riesgo:'mdt_obligatorio',
+        riesgoLabel:'Perfil en Tensión — MDT con Paciente Presente',
+        esquema:'Ninguna opción es claramente superior — tres corredores posibles',
+        justificacion:'cT2N1 recto bajo (<5cm) con deseo de preservación orgánica. Perfil en tensión entre tres corredores: (A) PROSPECT fue diseñado para recto medio/alto — la exclusión práctica de recto bajo se debe al riesgo de conversión a APR donde el FOLFOX solo puede no ser suficiente; (B) OPRA (LCRT → FOLFOX consolidante) tiene mayor evidencia para preservación en recto bajo con cCR del 50%; (C) LCRT estándar seguido de evaluación W&W si hay cCR. La decisión requiere que el paciente entienda los riesgos reales de APR vs regrowth y decida con información completa.',
+        evidencia:['OPRA JCO 2024','PROSPECT NEJM 2023','ESMO 2025','IWWD'],
+        ww:true,
+        mdtObligatorio:true,
+        corredores:[
+          'Corredor A — OPRA (LCRT → FOLFOX): mayor evidencia para preservación en recto bajo. Si cCR → W&W (50% preservación, regrowth 25%)',
+          'Corredor B — LCRT estándar: menos intenso que OPRA. Si cCR → W&W. Si no cCR → TME',
+          'Corredor C — PROSPECT: evidencia limitada en recto bajo <5cm. Solo si altura ≥4cm y viabilidad de LAR confirmada'
+        ],
+        mdtPreguntas:[
+          '🔴 ¿Distancia exacta al margen anal y al plano elevadores? ¿APR vs LAR ultra-baja vs ISR?',
+          '🔴 ¿El paciente entiende el riesgo de APR y lo acepta como alternativa si no hay cCR?',
+          '¿El paciente entiende el riesgo de regrowth (25%) y los controles cada 3 meses?',
+          '¿Centro con experiencia en W&W y en cirugía de recto bajo (ISR)?',
+          '¿Si OPRA: equipo capacitado para seguimiento estricto post-LCRT?',
+          '¿Decisión tomada con el paciente presente y con información sobre las tres opciones?'
+        ].concat(fertilityGris3)
+      };
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // NIVEL 2 — flags para advertencias contextuales en el resultado
+    // ════════════════════════════════════════════════════════════════════
+    var flagEcog2Tumor = (s.ecog===2 && s.ecog2causa==='tumor');
+    var flagGangliosLatRapido = gangliosLat && (s.scrtDisponible!=='no');
+    var flagRectoAltoN2 = (alturaNum2>10 && n2 && t3any);
+
+    // ── Muy alto riesgo ───────────────────────────────────────────────────
+    if(crmInv||t4b||t4a||(emviPos&&(n2||crmInv||crmAmen))||gangliosLat||depositos) {
+      var fertilityQ=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento','¿Derivación a medicina reproductiva urgente?']:[];
+      var scrtOk=s.scrtDisponible!=='no';
+      var esquemaMuyAlto,justMuyAlto,evidMuyAlto,mdtMuyAlto;
       if(scrtOk){
-        esquemaMuyAlto = 'TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).';
-        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.';
-        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
-        mdtMuyAlto = ['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?','¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
+        esquemaMuyAlto='TNT — RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) o PRODIGE 23 (mFOLFIRINOX → LCRT). FOLFIRINOX como opción TNT si apto (NCCN v1.2026).';
+        justMuyAlto='Muy alto riesgo sistémico. RAPIDO (5.6 años): reducción falla a distancia (20% vs 26%, HR 0.71). ⚠️ ATENCIÓN: seguimiento RAPIDO a 5 años muestra mayor recurrencia locorregional (10%) vs CRT estándar (6%) — evaluar en MDT. NCCN v1.2026 agrega FOLFIRINOX como opción de QT en TNT.';
+        evidMuyAlto=['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'];
+        mdtMuyAlto=['¿RAPIDO vs PRODIGE 23 según riesgo de recurrencia local vs sistémica?','¿FOLFIRINOX si ECOG 0-1 y apto?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Función renal antes de CAPOX?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
       } else {
-        esquemaMuyAlto = '⭐ Estándar internacional: RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) — no disponible en este centro\n\n▸ OPCIÓN 1 — PRODIGE 23 (mFOLFIRINOX → LCRT)\n  Indicado cuando: objetivo es reducción de metástasis sistémicas. Evidencia nivel 1. No requiere SCRT.\n\n▸ OPCIÓN 2 — OPRA (LCRT → FOLFOX consolidante)\n  Indicado cuando: objetivo principal es preservación orgánica (W&W). No requiere SCRT.\n  Nota: no diseñado para reducir metástasis — objetivo diferente al RAPIDO.\n\n▸ OPCIÓN 3 — Derivación a centro con SCRT\n  Considerar cuando: múltiples factores de riesgo sistémico (N2 + EMVI+ + depósitos + CRM invadido), necesidad de inicio rápido, T4b con downstaging urgente, paciente no tolera FOLFIRINOX (CAPOX post-SCRT es más tolerable), o paciente con dificultad de RT larga (28 sesiones vs 5 sesiones SCRT).\n  NO derivar cuando: edad avanzada o comorbilidades que dificultan traslados, distancia >100km sin soporte social, tiempos de espera en centro de referencia >3-4 semanas.\n\n▸ OPCIÓN 4 — LCRT estándar\n  Indicado cuando: PS ≥2 o no tolera FOLFIRINOX ni CAPOX.';
-        justMuyAlto = 'Muy alto riesgo sistémico. RAPIDO es el estándar internacional (SCRT no disponible en este centro). PRODIGE 23 y OPRA son alternativas de evidencia nivel 1 sin necesidad de SCRT. La elección entre ellas depende del objetivo del MDT: reducción sistémica (PRODIGE 23) vs preservación orgánica (OPRA). La derivación a centro con SCRT debe evaluarse con criterios explícitos. ⚠️ RAPIDO 5 años: mayor recurrencia locorregional (10% vs 6%).';
-        evidMuyAlto = ['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','OPRA JCO 2024','NCCN v1.2026','ESMO 2025'];
-        mdtMuyAlto = ['¿Objetivo del MDT: reducción sistémica (PRODIGE 23) o preservación orgánica (OPRA)?','¿Criterios de derivación presentes? (N2+EMVI++depósitos, T4b, no tolera FOLFOX, dificultad RT larga)','¿Criterios de NO derivación? (edad, distancia >100km, espera >3-4 sem en centro de referencia)','¿PRODIGE 23: ECOG 0-1 apto para mFOLFIRINOX?','¿OPRA: deseo de preservación orgánica confirmado?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
+        esquemaMuyAlto='⭐ Estándar internacional: RAPIDO (SCRT 5×5Gy + CAPOX/FOLFOX) — no disponible en este centro\n\n▸ OPCIÓN 1 — PRODIGE 23 (mFOLFIRINOX → LCRT)\n  Indicado cuando: objetivo es reducción de metástasis sistémicas. Evidencia nivel 1.\n\n▸ OPCIÓN 2 — OPRA (LCRT → FOLFOX consolidante)\n  Indicado cuando: objetivo principal es preservación orgánica (W&W).\n\n▸ OPCIÓN 3 — Derivación a centro con SCRT\n  Considerar cuando: N2+EMVI++depósitos, T4b, no tolera FOLFIRINOX, dificultad RT larga.\n\n▸ OPCIÓN 4 — LCRT estándar\n  Indicado cuando: PS ≥2 o no tolera FOLFIRINOX ni CAPOX.';
+        justMuyAlto='Muy alto riesgo sistémico. RAPIDO es el estándar internacional (SCRT no disponible en este centro). PRODIGE 23 y OPRA son alternativas de evidencia nivel 1. Elección depende del objetivo del MDT: reducción sistémica (PRODIGE 23) vs preservación orgánica (OPRA). ⚠️ RAPIDO 5 años: mayor recurrencia locorregional (10% vs 6%).';
+        evidMuyAlto=['RAPIDO trial 2023 + 5y FU','PRODIGE 23 2024','OPRA JCO 2024','NCCN v1.2026','ESMO 2025'];
+        mdtMuyAlto=['¿Objetivo del MDT: reducción sistémica (PRODIGE 23) o preservación orgánica (OPRA)?','¿Criterios de derivación presentes?','¿PRODIGE 23: ECOG 0-1 apto para mFOLFIRINOX?','¿OPRA: deseo de preservación orgánica confirmado?','¿Resecabilidad multivisceral si T4b?','¿Ganglios laterales: disección lateral post-TNT?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'];
       }
-      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:esquemaMuyAlto,justificacion:justMuyAlto,evidencia:evidMuyAlto,ww:false,scrtNoDisponible:!scrtOk,mdtPreguntas:mdtMuyAlto.concat(fertilityQ)};
+      return {riesgo:'veryhigh',riesgoLabel:'Riesgo Muy Alto',esquema:esquemaMuyAlto,justificacion:justMuyAlto,evidencia:evidMuyAlto,ww:false,scrtNoDisponible:!scrtOk,nivel2Flags:{ecog2Tumor:flagEcog2Tumor,gangliosLatRapido:flagGangliosLatRapido,rectoAltoN2:false},mdtPreguntas:mdtMuyAlto.concat(fertilityQ)};
     }
-    if((s.emvi==='positivo'||n2||t3cd||depositos)&&!(preservacion&&bajo&&!crmInv)&&fit){
-      var fertilityQ2 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento'] : [];
-      return {riesgo:'high',riesgoLabel:'Riesgo Alto',esquema:'PRODIGE 23 — mFOLFIRINOX × 6c → LCRT → TME → FOLFOX. FOLFIRINOX como alternativa TNT (NCCN v1.2026).',justificacion:'Alto riesgo sistémico. PRODIGE 23 (7 años): MFS 81.6% vs 73.5%, DFS 75.7% vs 68.5%. Quimio inductora ataca micrometástasis. NCCN v1.2026 también reconoce FOLFIRINOX como opción en TNT de inducción o consolidación.',evidencia:['PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿PS 0-1 para FOLFIRINOX?','¿Sin neuropatía periférica preexistente?','¿Función hepática/renal?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'].concat(fertilityQ2)};
+
+    // ── Alto riesgo sistémico (PRODIGE 23) ────────────────────────────────
+    if((emviPos||n2||t3cd||depositos) && !(preservacion&&bajo&&!crmInv) && fit) {
+      var fertilityQ2=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['⚠️ Mujer con deseo de fertilidad: discutir preservación ovárica/embrionaria antes de inicio de tratamiento']:[];
+      return {riesgo:'high',riesgoLabel:'Riesgo Alto',esquema:'PRODIGE 23 — mFOLFIRINOX × 6c → LCRT → TME → FOLFOX. FOLFIRINOX como alternativa TNT (NCCN v1.2026).',justificacion:'Alto riesgo sistémico. PRODIGE 23 (7 años): MFS 81.6% vs 73.5%, DFS 75.7% vs 68.5%. Quimio inductora ataca micrometástasis.',evidencia:['PRODIGE 23 2024','NCCN v1.2026','ESMO 2025'],ww:false,nivel2Flags:{ecog2Tumor:flagEcog2Tumor,gangliosLatRapido:false,rectoAltoN2:flagRectoAltoN2},mdtPreguntas:['¿PS 0-1 para FOLFIRINOX?','¿Sin neuropatía periférica preexistente?','¿Función hepática/renal?','¿Perfilado molecular (RAS/BRAF/MSI/PIK3CA)?'].concat(fertilityQ2)};
     }
-    if(preservacion&&bajo&&!crmInv)
+
+    // ── Alto riesgo, candidato a preservación (OPRA) ──────────────────────
+    if(preservacion && bajo && !crmInv) {
       return {riesgo:'high',riesgoLabel:'Riesgo Alto — Candidato a Preservación',esquema:'OPRA (CNCT) — LCRT → FOLFOX consolidante → cCR? → W&W o TME',justificacion:'Recto bajo con deseo de preservación. OPRA (5 años): 50% preservación orgánica. En cCR: 77% a 3 años. Regrowth: 23-25%, rescatable en >90%.',evidencia:['OPRA JCO 2024','IWWD 793 pts','NCCN v3.2024','ESMO 2025'],ww:true,mdtPreguntas:['¿Equipo capacitado para W&W?','¿Paciente entiende riesgo de regrowth?','¿RMN + endoscopía cada 3 meses?']};
-    if(s.ecog>=2||!fit){
-      var fertilityLCRT = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: RT pélvica compromete fertilidad — discutir preservación ovárica/embrionaria ANTES de iniciar CRT'] : [];
-      return {riesgo:'high',riesgoLabel:'Riesgo Alto — PS limitado',esquema:'LCRT estándar (50.4Gy + capecitabina) → TME',justificacion:'PS ≥2 o comorbilidades que contraindican FOLFIRINOX. LCRT estándar con capecitabina como neoadyuvancia adaptada al PS.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,mdtPreguntas:['¿Evaluación funcional/geriátrica?','¿CAPOX oral como alternativa?','¿Evaluación nutricional?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityLCRT)};
     }
-    var prospectEligible = fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos &&
-      ((s.cT==='cT2'&&s.cN==='N1') || (s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')));
-    var alturaNum = parseFloat(s.altura);
-    var rectoAlto = alturaNum > 10;
-    var dualOption = fit && s.cT==='cT3a' && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoAlto;
-    if(dualOption){
-      var fertilityDual = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['✅ Mujer con deseo de fertilidad: PROSPECT preferido — evita RT pélvica','⚠️ Si se elige cirugía directa: sin impacto reproductivo adicional'] : [];
-      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Dos opciones válidas',esquema:'OPCIÓN A — Cirugía directa (TME) sin neoadyuvancia\nOPCIÓN B — PROSPECT: FOLFOX ×6 ciclos → si respuesta ≥20% o mrTRG 1-3 → TME sin RT',justificacion:'cT3a N0 CRM libre sin EMVI. Ambas opciones son válidas según evidencia actual.\n\n▸ CIRUGÍA DIRECTA (ESMO CPG 2025): recurrencia local <10% con TME de calidad. Sin toxicidad de tratamiento. Evita quimioterapia innecesaria. Desventaja: sin downstaging, sin información sobre biología tumoral, sin posibilidad de W&W.\n\n▸ PROSPECT (NEJM 2023): FOLFOX neoadyuvante evita radioterapia pélvica. DFS 5 años: 80.8% vs 78.6% (no inferioridad). Ventaja: si responde bien, puede evitar también la RT. Desventaja: toxicidad de FOLFOX (neuropatía, hematológica), requiere reevaluación radiológica. Si no responde → necesita LCRT igual.\n\nDecisión debe tomarse en MDT considerando preferencia del paciente y experiencia del centro.',evidencia:['ESMO CPG 2025','PROSPECT NEJM 2023','NCCN v1.2026'],ww:false,prospect:true,dual:true,mdtPreguntas:['¿Calidad del TME esperada en el centro?','¿Preferencia del paciente: evitar QT vs evitar RT?','¿Disponibilidad de seguimiento para PROSPECT (RMN 8-10 sem)?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?','¿Si PROSPECT: criterio de respuesta definido antes de iniciar?'].concat(fertilityDual)};
+
+    // ── Alto riesgo, PS limitado (LCRT estándar) ──────────────────────────
+    if(s.ecog>=2 || !fit) {
+      var fertilityLCRT=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['⚠️ Mujer con deseo de fertilidad: RT pélvica compromete fertilidad — discutir preservación ovárica/embrionaria ANTES de iniciar CRT']:[];
+      return {riesgo:'high',riesgoLabel:'Riesgo Alto — PS limitado',esquema:'LCRT estándar (50.4Gy + capecitabina) → TME',justificacion:'PS ≥2 o comorbilidades que contraindican FOLFIRINOX. LCRT estándar con capecitabina como neoadyuvancia adaptada al PS.',evidencia:['NCCN v1.2026','ESMO 2025'],ww:false,nivel2Flags:{ecog2Tumor:flagEcog2Tumor,gangliosLatRapido:false,rectoAltoN2:false},mdtPreguntas:['¿Evaluación funcional/geriátrica?','¿CAPOX oral como alternativa?','¿Evaluación nutricional?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityLCRT)};
     }
-    if(prospectEligible){
-      var fertilityPROSP = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['✅ Mujer con deseo de fertilidad: PROSPECT evita RT pélvica si respuesta adecuada — esquema preferido en esta situación'] : [];
-      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Candidato PROSPECT',esquema:'FOLFOX neoadyuvante (×6 ciclos) → Reevaluar: si respuesta ≥20% o mrTRG 1-3 → cirugía directa (TME) sin RT. Si no respuesta → LCRT estándar → cirugía.',justificacion:'PROSPECT (NEJM 2023, Schrag et al.) — T2N1 o T3 bajo-moderado riesgo, CRM libre. DFS a 5 años: 80.8% (FOLFOX) vs 78.6% (CRT), no inferioridad demostrada. Evita toxicidad pélvica. Incorporado NCCN v1.2026.',evidencia:['PROSPECT NEJM 2023','NCCN v1.2026','ESMO 2025'],ww:false,prospect:true,mdtPreguntas:['¿Confirmar CRM libre >1mm en RMN de alta calidad?','¿Ausencia de EMVI positivo y ganglios N2?','¿ECOG 0-1 apto para FOLFOX?','¿Definir criterio de respuesta pre-cirugía (≥20% reducción o mrTRG 1-3)?','¿Plan si no responde a FOLFOX (CRT de rescate)?','¿Preferencia del paciente sobre evitar radioterapia?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityPROSP)};
+
+    // ── Riesgo intermedio ─────────────────────────────────────────────────
+    var alturaNum=parseFloat(s.altura), rectoAlto2=alturaNum>10, rectoBajo=alturaNum<5;
+    var prospectEligible=fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoBajo && ((s.cT==='cT2'&&s.cN==='N1')||(s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')));
+    var dualOption=fit && s.cT==='cT3a' && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoAlto2 && !rectoBajo;
+
+    // Recto bajo (<5cm) perfil intermedio — PROSPECT no aplica
+    if(rectoBajo && fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && ((s.cT==='cT2'&&s.cN==='N1')||(s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')))) {
+      var fertilityBajo2=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['⚠️ Mujer con deseo de fertilidad: RT pélvica compromete función reproductiva — discutir preservación ovárica antes de CRT']:[];
+      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Recto Bajo (<5cm)',esquema:'Decisión MDT: LCRT neoadyuvante (estándar) ± discutir preservación. PROSPECT NO aplicable en este perfil.',justificacion:'Tumor de recto bajo (<5cm). PROSPECT excluyó en la práctica tumores muy bajos donde la conversión a APR es un riesgo relevante. Opciones: (a) LCRT estándar; (b) cirugía directa si TME de calidad garantizada; (c) OPRA si deseo de preservación.',evidencia:['ESMO CPG 2025','NCCN v1.2026','PROSPECT NEJM 2023'],ww:false,mdtPreguntas:['¿Riesgo de APR vs LAR vs ISR?','¿LCRT para downstaging?','¿Si deseo de preservación: OPRA como alternativa?','¿Calidad del TME esperada?','¿Perfilado molecular?'].concat(fertilityBajo2)};
     }
-    if(rectoAlto && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos){
-      return {riesgo:'low',riesgoLabel:'Riesgo Bajo — Recto alto',esquema:'Cirugía directa (TME/LAR) sin neoadyuvancia',justificacion:'Recto alto (>10cm) cT3 N0 CRM libre sin EMVI. Recurrencia local <5% con TME de calidad (ESMO CPG 2025). Neoadyuvancia no indicada en este perfil. PROSPECT no fue diseñado para recto alto. NCCN v1.2026: perfilado molecular post-resección.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:['¿Abordaje laparoscópico/robótico?','¿Calidad del TME esperada?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?']};
+
+    if(dualOption) {
+      var fertilityDual=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['✅ Mujer con deseo de fertilidad: PROSPECT preferido — evita RT pélvica','⚠️ Si se elige cirugía directa: sin impacto reproductivo adicional']:[];
+      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Dos opciones válidas',esquema:'OPCIÓN A — Cirugía directa (TME) sin neoadyuvancia\nOPCIÓN B — PROSPECT: FOLFOX ×6 ciclos → si respuesta ≥20% o mrTRG 1-3 → TME sin RT',justificacion:'cT3a N0 CRM libre sin EMVI. Altura ≥5cm. Ambas opciones son válidas.\n\n▸ CIRUGÍA DIRECTA: recurrencia local <10% con TME de calidad. Sin toxicidad neoadyuvante.\n▸ PROSPECT: FOLFOX neoadyuvante evita RT pélvica. DFS 5 años: 80.8% vs 78.6% (no inferioridad).',evidencia:['ESMO CPG 2025','PROSPECT NEJM 2023','NCCN v1.2026'],ww:false,prospect:true,dual:true,mdtPreguntas:['¿Calidad del TME esperada en el centro?','¿Preferencia del paciente: evitar QT vs evitar RT?','¿Disponibilidad de seguimiento para PROSPECT (RMN 8-10 sem)?','¿Altura ≥5cm confirmada (requisito PROSPECT)?','¿Perfilado molecular post-resección?','¿Si PROSPECT: criterio de respuesta definido antes de iniciar?'].concat(fertilityDual)};
     }
-    var fertilityInt = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: si se decide LCRT, discutir preservación ovárica antes de iniciar'] : [];
-    return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio',esquema:'Decisión en MDT — cirugía directa vs LCRT neoadyuvante',justificacion:'cT3a/b N0-N1 CRM libre sin EMVI. Recurrencia local <10% con TME de calidad. Cirugía directa posible (ESMO 2025). NCCN v1.2026: perfilado molecular post-resección recomendado.',evidencia:['ESMO CPG 2025','NCCN v1.2026','ASCO JCO 2024'],ww:false,mdtPreguntas:['¿Riesgo de margen comprometido?','¿Calidad del TME esperada?','¿Preferencia del paciente?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityInt)};
+
+    if(prospectEligible) {
+      var fertilityPROSP=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['✅ Mujer con deseo de fertilidad: PROSPECT evita RT pélvica si respuesta adecuada']:[];
+      return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio — Candidato PROSPECT',esquema:'FOLFOX neoadyuvante (×6 ciclos) → Reevaluar: si respuesta ≥20% o mrTRG 1-3 → TME sin RT. Si no respuesta → LCRT → cirugía.',justificacion:'PROSPECT (NEJM 2023) — T2N1 o T3 bajo-moderado riesgo, CRM libre, altura ≥5cm. DFS a 5 años: 80.8% vs 78.6%, no inferioridad. Evita toxicidad pélvica.',evidencia:['PROSPECT NEJM 2023','NCCN v1.2026','ESMO 2025'],ww:false,prospect:true,mdtPreguntas:['¿Confirmar CRM libre >1mm en RMN?','¿Ausencia de EMVI positivo y ganglios N2?','¿ECOG 0-1 apto para FOLFOX?','¿Criterio de respuesta pre-cirugía definido (≥20% o mrTRG 1-3)?','¿Plan si no responde a FOLFOX (CRT de rescate)?','¿Perfilado molecular?'].concat(fertilityPROSP)};
+    }
+
+    if(rectoAlto2 && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos) {
+      return {riesgo:'low',riesgoLabel:'Riesgo Bajo — Recto alto',esquema:'Cirugía directa (TME/LAR) sin neoadyuvancia',justificacion:'Recto alto (>10cm) cT3 N0 CRM libre sin EMVI. Recurrencia local <5% con TME de calidad (ESMO CPG 2025). Neoadyuvancia no indicada en este perfil. PROSPECT no fue diseñado para recto alto.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,nivel2Flags:{ecog2Tumor:false,gangliosLatRapido:false,rectoAltoN2:flagRectoAltoN2},mdtPreguntas:['¿Abordaje laparoscópico/robótico?','¿Calidad del TME esperada?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?']};
+    }
+
+    var fertilityInt=(s.sexo==='F'&&s.paridad==='no_satisfecha')?['⚠️ Mujer con deseo de fertilidad: si se decide LCRT, discutir preservación ovárica antes de iniciar']:[];
+    return {riesgo:'intermediate',riesgoLabel:'Riesgo Intermedio',esquema:'Decisión en MDT — cirugía directa vs LCRT neoadyuvante',justificacion:'cT3a/b N0-N1 CRM libre sin EMVI. Recurrencia local <10% con TME de calidad. Cirugía directa posible (ESMO 2025).',evidencia:['ESMO CPG 2025','NCCN v1.2026','ASCO JCO 2024'],ww:false,mdtPreguntas:['¿Riesgo de margen comprometido?','¿Calidad del TME esperada?','¿Preferencia del paciente?','¿Perfilado molecular (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityInt)};
   }
 
   function analyzeReevalRules() {
@@ -867,15 +1086,53 @@
     if(biopsia==='positiva') return {respuesta:'noresp',respuestaLabel:'Tumor Residual Confirmado',decision:'Cirugía — TME',justificacion:'Biopsia positiva confirma tumor residual viable. Indicación de cirugía TME sin demora.',seguimiento:null,mdtPreguntas:['¿APR vs LAR?','¿Ileostomía de protección?','¿Fecha de cirugía?']};
     if(endoPost==='masa_visible'||drePost==='masa_residual') return {respuesta:'noresp',respuestaLabel:'Sin Respuesta',decision:'Cirugía — TME',justificacion:'Masa visible en endoscopía o palpable al DRE. Sin respuesta clínica relevante.',seguimiento:null,mdtPreguntas:['¿Tipo de cirugía definitiva?','¿Reevaluar CRM para planificación?','¿Adyuvancia post-cirugía?']};
     if(mrtrg>=4) return {respuesta:'partial',respuestaLabel:'Respuesta Insuficiente',decision:'Cirugía — TME',justificacion:'mrTRG '+mrtrg+': tumor predominante. Señal tumoral supera la fibrosis. DWI '+(dwi||'NE')+'.',seguimiento:null,mdtPreguntas:['¿APR vs LAR?','¿CRM post libre?','¿Adyuvancia?']};
+
+    // --- CAMBIO 5: GANGLIOS LATERALES PERSISTENTES — rama explícita ---
+    var gangliosLatPersistentes = s.gangliosPost === 'persistentes' || s.gangliosPost === 'reducidos';
+    // Si hubo ganglios laterales ilíacos internos desde el inicio y persisten post-neoady → LLND
+    if(gangliosLatPersistentes && registroPrevio && (registroPrevio.gangliosLaterales === 'sospechoso')) {
+      return {respuesta:'partial',respuestaLabel:'Ganglio Lateral Persistente — Decisión MDT',decision:'Discusión MDT: Lateral Pelvic Lymph Node Dissection (LLND) vs irradiación campo extendido',justificacion:'Ganglio lateral (ilíaco interno/obturador) persistente o con morfología anormal residual tras neoadyuvancia. ESMO 2025 y datos del grupo japonés (JCOG0212): si el ganglio lateral persiste ≥8mm o con morfología anormal post-TNT, la disección lateral (LLND) reduce el riesgo de recurrencia lateral pélvica (de ~20% a ~5%). La irradiación de campo extendido es alternativa si el centro no realiza LLND. Esta decisión no puede quedar como "solo alto riesgo" — requiere discusión formal en MDT con cirujano con experiencia en LLND.',seguimiento:['Discutir en MDT con cirujano colorrectal con experiencia en LLND','Evaluar morfología exacta del ganglio: tamaño post-TNT, señal en DWI','Si LLND decidida: TME + LLND bilateral o unilateral según localización','Si LLND no disponible: derivación a centro de referencia','Si irradiación extendida: evaluar dosis y campo con radioterapeuta'],mdtPreguntas:['¿Tamaño y morfología exacta del ganglio lateral post-neoady (DWI, morfología)?','¿Centro con capacidad de LLND?','¿Ganglio unilateral o bilateral?','¿Irradiación de campo extendido como alternativa?','¿Derivación a centro de referencia si no hay experiencia en LLND?','¿CEA post y respuesta tumoral del primario?']};
+    }
+
     var mrtrg12=mrtrg<=2, dwiOk=dwi==='negativo'||dwi==='minimo';
     var dreOk=drePost==='normal'||drePost==='cicatriz'||drePost==='no_alcanzable';
     var endoOk=endoPost==='cicatriz_plana', endoNear=endoPost==='ulcera_superficial', crmOk=crmPost==='libre';
-    if(mrtrg12&&dwiOk&&dreOk&&endoOk&&crmOk){
-      var altaConfianza = mrtrg===1;
+    // --- CAMBIO 2: gangliosPost normalizados es requisito obligatorio de cCR ---
+    var gangliosOk = s.gangliosPost === 'normalizados';
+    // --- CAMBIO 1: CEA post en lógica de cCR ---
+    var ceaPostNum = parseFloat(s.ceaPost);
+    var ceaPostElevado = !isNaN(ceaPostNum) && ceaPostNum > 2.5;
+    var ceaPostDisponible = s.ceaPost !== null && s.ceaPost !== '' && !isNaN(ceaPostNum);
+    if(mrtrg12&&dwiOk&&dreOk&&endoOk&&crmOk&&!gangliosOk&&s.gangliosPost){
+      // Buena respuesta mucosal pero ganglios aún anormales → NO es cCR
+      return {respuesta:'near',respuestaLabel:'Respuesta Mucosal Excelente — Ganglios Persistentes',decision:'NO clasificar como cCR — ganglios con morfología anormal residual. Cirugía TME o discusión MDT',justificacion:'mrTRG '+mrtrg+' con excelente respuesta mucosal, pero ganglios post-tratamiento con morfología anormal residual o persistentes. Según ESMO 2025 e IWWD, la normalización ganglionar es requisito para clasificar cCR — ganglios sospechosos persistentes excluyen W&W. El riesgo de compromiso ganglionar real persiste independientemente de la respuesta del tumor primario.',seguimiento:['Discutir en MDT: cirugía TME vs vigilancia adicional con control ganglionar','Si se decide vigilancia: control cada 6-8 semanas con RMN (foco en ganglios)','Si ganglios normalizan en siguiente control → reevaluar criterios cCR completos','Si persisten → cirugía TME sin demora','Considerar PET-CT para caracterizar actividad ganglionar'],mdtPreguntas:['¿Morfología exacta de los ganglios persistentes (tamaño, forma, señal DWI)?','¿Son ganglios mesorectales o laterales (ilíacos internos)?','¿Si laterales: discutir LLND?','¿Riesgo de falso positivo por fibrosis post-RT?','¿Consenso MDT sobre W&W con ganglios persistentes?']};
+    }
+    if(mrtrg12&&dwiOk&&dreOk&&endoOk&&crmOk&&gangliosOk){
+      // CEA muy elevado post-tratamiento: impide cCR y deriva a MDT
+      if(ceaPostDisponible && ceaPostNum > 5) {
+        return {respuesta:'near',respuestaLabel:'Respuesta Radiológica — CEA Elevado (>' + ceaPostNum + ' ng/mL)',decision:'NO confirmar cCR con CEA >5 ng/mL — discutir en MDT antes de decidir W&W',justificacion:'Respuesta multimodal favorable (mrTRG '+mrtrg+', DWI, DRE, endoscopía, ganglios) pero CEA post-tratamiento '+ceaPostNum+' ng/mL (valor normal post-neoady: ≤2.5 ng/mL). El CEA elevado post-tratamiento es predictor independiente de tumor residual viable según el International Watch & Wait Database (IWWD). Puede reflejar: tumor submucoso sin expresión endoscópica, micrometástasis sistémica, o falso positivo (tabaquismo, comorbilidad). Se requiere aclaración antes de iniciar W&W.',seguimiento:['Repetir CEA en 2-3 semanas','Si persiste elevado: PET-CT + biopsia profunda del sitio tumoral','Si normaliza y resto confirma → reevaluar criterios cCR completos en MDT','No iniciar W&W hasta CEA ≤2.5 ng/mL o aclarado por MDT'],mdtPreguntas:['¿CEA basal pre-tratamiento para comparar tendencia?','¿Tabaquismo activo (causa de CEA elevado no tumoral)?','¿PET-CT para descartar enfermedad a distancia o tumor submucoso?','¿Biopsia profunda del sitio tumoral?','¿Consenso MDT explícito antes de cualquier decisión?']};
+      }
+      // CEA moderadamente elevado (2.5-5): reduce confianza del cCR
+      var ceaReduceConfianza = ceaPostDisponible && ceaPostNum > 2.5 && ceaPostNum <= 5;
+      var altaConfianza = mrtrg===1 && !ceaReduceConfianza;
       var seguimientoCCR = altaConfianza ?
-        ['RMN + endoscopía + DRE cada 3 meses — Año 1 y 2','RMN + endoscopía + DRE cada 6 meses — Año 3-5','TC TAP cada 6 meses los primeros 3 años','Si regrowth: cirugía de rescate (R0 >90%)'] :
-        ['⚠️ Confianza moderada (mrTRG 2): primera reevaluación a las 6-8 semanas (RMN + endoscopía + DRE) antes de confirmar W&W','Si confirma respuesta en reevaluación precoz → seguimiento cada 3 meses Año 1-2','RMN + endoscopía + DRE cada 6 meses — Año 3-5','TC TAP cada 6 meses los primeros 3 años','Si regrowth: cirugía de rescate (R0 >90%)'];
-      return {respuesta:'ccr',respuestaLabel:'cCR confirmada — '+(altaConfianza?'Alta confianza':'Confianza moderada'),decision:s.objetivoTto==='ww'?'Watch & Wait':'Watch & Wait (discutir en MDT)',justificacion:'mrTRG '+mrtrg+' + DWI '+dwi+' + DRE sin masa + cicatriz endoscópica = cCR. OPRA: 77% preservación en cCR. Regrowth: 23-25%, rescatable en 88-91%.',seguimiento:seguimientoCCR,mdtPreguntas:['¿Equipo de acuerdo con W&W?','¿Paciente acepta riesgo de regrowth?','¿Acceso a RMN + endoscopía cada 3 meses?']};
+        ['RMN pelvis (3T DWI) + endoscopía + DRE cada 3 meses — Años 1 y 2',
+         'RMN pelvis (3T DWI) + endoscopía + DRE cada 6 meses — Años 3 a 5',
+         'TC tórax-abdomen-pelvis cada 6 meses — primeros 3 años',
+         'CEA cada 3 meses los primeros 2 años (>2.5 ng/mL obliga reevaluar)',
+         'Anoscopia de alto rendimiento si hay síntomas entre controles',
+         'Si regrowth intraluminal (≈25%): cirugía de rescate con intención curativa — R0 en 88-91% (IWWD)',
+         '⚠️ NUNCA diferir control por síntomas "menores" — cualquier cambio → evaluación inmediata'] :
+        ['⚠️ Confianza moderada (mrTRG 2): primera reevaluación precoz a las 6-8 semanas (RMN + endoscopía + DRE) antes de confirmar W&W definitivo',
+         'Si confirma respuesta en reevaluación precoz → seguimiento estándar cada 3 meses Años 1-2',
+         'RMN pelvis (3T DWI) + endoscopía + DRE cada 6 meses — Años 3 a 5',
+         'TC tórax-abdomen-pelvis cada 6 meses — primeros 3 años',
+         'CEA cada 3 meses los primeros 2 años (>2.5 ng/mL obliga reevaluar)',
+         'Si regrowth: cirugía de rescate (R0 en 88-91%)',
+         '⚠️ Ante cualquier cambio clínico o endoscópico → evaluación inmediata sin esperar próximo control'];
+      var ceaLabel = ceaReduceConfianza ? ' — CEA levemente elevado (' + ceaPostNum + ' ng/mL), vigilancia estrecha' : '';
+      var ceaJust = ceaReduceConfianza ? ' ⚠️ CEA post-tratamiento '+ceaPostNum+' ng/mL (levemente elevado): clasificación de cCR con confianza reducida. Repetir CEA en 4 semanas — si no normaliza, reconsiderar W&W en MDT.' : (ceaPostDisponible ? ' CEA post-tratamiento '+ceaPostNum+' ng/mL ≤2.5 ng/mL: apoya cCR.' : '');
+      return {respuesta:'ccr',respuestaLabel:'cCR confirmada — '+(altaConfianza?'Alta confianza':'Confianza moderada')+ceaLabel,decision:s.objetivoTto==='ww'?'Watch & Wait':'Watch & Wait (discutir en MDT)',justificacion:'mrTRG '+mrtrg+' + DWI '+dwi+' + DRE sin masa + cicatriz endoscópica + ganglios normalizados + CRM libre = cCR multimodal. OPRA: 77% preservación en cCR. Regrowth: 23-25%, rescatable en 88-91% (IWWD 793 pts).'+ceaJust,seguimiento:seguimientoCCR,mdtPreguntas:['¿Todos los criterios cCR presentes: mrTRG 1-2 + DWI negativo/mínimo + DRE sin masa + cicatriz endo + CRM libre + ganglios normalizados?','¿CEA post-tratamiento ≤2.5 ng/mL confirmado?','¿Equipo de acuerdo con W&W?','¿Paciente informado sobre regrowth (25%) y necesidad de seguimiento estricto?','¿Acceso garantizado a RMN + endoscopía cada 3 meses durante 2 años?','¿Plan de cirugía de rescate si regrowth?']};
     }
     if(mrtrg<=3&&(endoNear||endoOk)&&dreOk){
       var dwiW=dwi==='moderado'||dwi==='marcado';
@@ -886,26 +1143,26 @@
       if(esq==='lcrt'){
         if(sem==='<8'||sem==='8-12'){
           timingDecision='Evaluación prematura — repetir en 4-6 semanas (objetivo: 12-16 sem post-RT)';
-          timingJust='NCCN v1.2026: timing óptimo post-LCRT es 12-16 semanas. Evaluación <12 sem sobreestima tumor residual por fibrosis en evolución.';
+          timingJust='NCCN v1.2026: ventana óptima post-LCRT es 12-16 semanas (rango sugerido — confirmar en MDT según evolución clínica). Evaluación <12 sem sobreestima tumor residual por fibrosis aún en evolución.';
           timingSeg=['Repetir evaluación completa (RMN + endoscopía + examen clínico) a las 12-16 semanas post-RT','No tomar decisión quirúrgica en esta etapa'];
         } else if(sem==='12-16'||sem==='16-24'){
           timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 4-6 semanas':'Reevaluar en 4-6 semanas — puede convertir a cCR';
-          timingJust='Timing óptimo post-LCRT. La respuesta puede continuar hasta la semana 20. Si sigue siendo nCR a las 20-24 sem → cirugía.';
+          timingJust='Ventana óptima post-LCRT. La respuesta puede continuar hasta la semana 20 — confirmar en MDT según respuesta clínica individual. Si persiste nCR a las 20-24 sem sin tendencia a conversión → cirugía.';
           timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 4-6 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 20-24 sem post-RT → cirugía TME'];
         } else {
           timingDecision='nCR persistente — Cirugía TME (sin beneficio de más espera)';
-          timingJust='Más de 20-24 semanas post-LCRT sin conversión a cCR. La respuesta adicional es improbable. Mayor espera aumenta complejidad quirúrgica por fibrosis (Fitzsimmons 2024).';
+          timingJust='Más de 20-24 semanas post-LCRT sin conversión a cCR. Respuesta adicional improbable (Fitzsimmons 2024). ⚠️ Ventana orientativa — si hay tendencia de mejora activa discutir en MDT antes de operar.';
           timingSeg=['Cirugía TME sin demora','No extender espera — riesgo de fibrosis severa intraoperatoria','Coordinar equipo quirúrgico'];
         }
       // RAPIDO
       } else if(esq==='rapido'){
         if(sem==='<8'||sem==='8-12'){
           timingDecision='Evaluación inicial post-RAPIDO — reevaluar en 6-8 semanas';
-          timingJust='Post-RAPIDO la respuesta es tiempo-dependiente. Evaluación <16 sem puede subestimar la respuesta final. Se recomienda reevaluar a las 16-24 sem.';
+          timingJust='Post-RAPIDO la respuesta es tiempo-dependiente. Evaluación <16 sem puede subestimar la respuesta final. Ventana sugerida 16-24 sem — confirmar en MDT.';
           timingSeg=['Repetir evaluación completa a las 16-24 semanas post-último ciclo QT','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica aún'];
         } else if(sem==='12-16'||sem==='16-24'){
           timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — puede convertir a cCR';
-          timingJust='Timing adecuado post-RAPIDO. La respuesta sigue siendo tiempo-dependiente hasta las 24 sem. Si persiste nCR a las 24 sem → cirugía.';
+          timingJust='Ventana adecuada post-RAPIDO. Respuesta tiempo-dependiente hasta las 24 sem. Si persiste nCR a las 24 sem → cirugía (ventana orientativa — confirmar en MDT).';
           timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 24 sem post-QT → cirugía TME'];
         } else {
           timingDecision='nCR persistente post-RAPIDO — Cirugía TME';
@@ -916,31 +1173,31 @@
       } else if(esq==='tnt_prodige'||esq==='tnt_opra'){
         if(sem==='<8'||sem==='8-12'||sem==='12-16'){
           timingDecision='Evaluación prematura para TNT — repetir a las 24 semanas';
-          timingJust='NCCN v1.2026: timing óptimo post-TNT es 24 semanas. Con OPRA la QT consolidante puede seguir teniendo efecto. Evaluación <24 sem es prematura.';
+          timingJust='NCCN v1.2026: ventana óptima post-TNT es 24 semanas. Con OPRA la QT consolidante puede seguir teniendo efecto. Evaluación <24 sem es prematura (ventana sugerida — confirmar en MDT).';
           timingSeg=['Repetir evaluación completa a las 24 semanas post-fin de tratamiento','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica aún'];
         } else if(sem==='16-24'||sem==='24-34'){
           timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — puede convertir a cCR';
-          timingJust='Timing óptimo post-TNT. Respuesta puede continuar hasta la semana 34-38. Si persiste nCR a las 34-38 sem → cirugía.';
+          timingJust='Ventana óptima post-TNT. Respuesta puede continuar hasta la semana 34-38. Ventana orientativa — confirmar en MDT según respuesta clínica individual.';
           timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a las 34-38 sem → cirugía TME'];
         } else {
           timingDecision='nCR persistente post-TNT — Cirugía TME';
-          timingJust='Más de 34-38 semanas post-TNT sin conversión a cCR. Sin beneficio adicional de espera. Riesgo de fibrosis quirúrgica aumenta.';
+          timingJust='Más de 34-38 semanas post-TNT sin conversión a cCR. Sin beneficio adicional de espera en la mayoría de los casos. Riesgo de fibrosis quirúrgica aumenta (Fitzsimmons 2024). Ventana orientativa — confirmar en MDT.';
           timingSeg=['Cirugía TME sin demora','No extender espera','Coordinar equipo quirúrgico'];
         }
       // Dostarlimab
       } else if(esq==='dostarlimab'){
         if(sem==='<8'||sem==='8-12'||sem==='12-16'){
-          timingDecision='Evaluación prematura post-dostarlimab — repetir a los 6 meses';
-          timingJust='Con dostarlimab (dMMR/MSI-H) las respuestas pueden ser lentas y tardías. La evaluación formal se realiza a los 6 meses de finalizado el tratamiento (Cercek NEJM 2022).';
-          timingSeg=['Repetir evaluación completa a los 6 meses post-fin de dostarlimab','RMN (3T DWI) + endoscopía + examen clínico','No tomar decisión quirúrgica prematura'];
+          timingDecision='Evaluación prematura post-dostarlimab — repetir a los 6 meses (ventana sugerida por evidencia)';
+          timingJust='Con dostarlimab (dMMR/MSI-H) las respuestas pueden ser lentas y tardías. La evaluación formal se realiza a los 6 meses de finalizado el tratamiento (Cercek NEJM 2022). ⚠️ ADVERTENCIA DOSTARLIMAB: el patrón de regresión inmunomediada genera edema inflamatorio que puede mimetizar tumor residual en RMN — el mrTRG puede ser menos confiable que en QRT convencional. Considerar PET-CT como complemento en la reevaluación formal.';
+          timingSeg=['Repetir evaluación completa a los 6 meses post-fin de dostarlimab','RMN (3T DWI) + endoscopía + DRE + CEA','⚠️ Considerar PET-CT en reevaluación formal: el mrTRG puede sobreestimar tumor residual en contexto de respuesta inmunomediada','No tomar decisión quirúrgica prematura'];
         } else if(sem==='16-24'||sem==='24-34'){
-          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas':'Reevaluar en 6-8 semanas — conversión tardía posible con inmunoterapia';
-          timingJust='Post-dostarlimab la conversión tardía a cCR está reportada hasta los 9-12 meses. Casos documentados de respuesta continua más allá de los 6 meses de finalizado el tratamiento.';
-          timingSeg=['Repetir RMN (3T DWI) + endoscopía + examen clínico en 6-8 semanas','Si convierte a cCR → W&W con seguimiento cada 3 meses','Si persiste nCR a los 12 meses → discutir cirugía en MDT'];
+          timingDecision=dwiW?'Repetir RMN + endoscopía + examen clínico en 6-8 semanas (DWI preocupante)':'Reevaluar en 6-8 semanas — conversión tardía posible con inmunoterapia';
+          timingJust='Post-dostarlimab la conversión tardía a cCR está reportada hasta los 9-12 meses. ⚠️ ADVERTENCIA DOSTARLIMAB: el mrTRG puede ser menos confiable en respuesta inmunomediada. Considerar PET-CT si hay discordancia entre RMN y hallazgos clínicos/endoscópicos. Ventana de decisión sugerida — confirmar en MDT según respuesta clínica individual.';
+          timingSeg=['Repetir RMN (3T DWI) + endoscopía + DRE en 6-8 semanas','⚠️ Considerar PET-CT si hay discordancia entre RMN y endoscopía/DRE','Si convierte a cCR (con PET-CT negativo si fue realizado) → W&W con seguimiento cada 3 meses','Si persiste nCR a los 12 meses → discutir cirugía en MDT'];
         } else {
           timingDecision='nCR persistente post-dostarlimab >9 meses — Discutir cirugía en MDT';
-          timingJust='Más de 9-12 meses post-dostarlimab sin conversión a cCR. Datos limitados sobre conversión tardía más allá de este punto. Decisión en MDT con información al paciente.';
-          timingSeg=['Discutir en MDT: cirugía TME vs vigilancia adicional','Datos insuficientes para espera >12 meses sin conversión','Si se decide W&W: acortar intervalo de seguimiento a cada 6-8 semanas'];
+          timingJust='Más de 9-12 meses post-dostarlimab sin conversión a cCR. Datos limitados sobre conversión tardía más allá de este punto. Decisión en MDT con información al paciente. ⚠️ Si la RMN sugiere respuesta pero hay duda por edema inflamatorio: PET-CT puede ayudar a diferenciar fibrosis de tumor residual viable.';
+          timingSeg=['Discutir en MDT: cirugía TME vs vigilancia adicional','⚠️ PET-CT para diferenciar fibrosis vs tumor residual si hay incertidumbre','Si se decide W&W: acortar intervalo de seguimiento a cada 6-8 semanas','Datos insuficientes para espera >12 meses sin conversión sin consenso MDT explícito'];
         }
       // Sin esquema especificado o esquema genérico
       } else {
@@ -961,8 +1218,74 @@
     collectStep();
     showStep(4);
     var r=analyzeRules();
-    var rc={low:'risk-low',intermediate:'risk-intermediate',high:'risk-high',veryhigh:'risk-veryhigh',special:'risk-special'};
-    var bc={low:'badge-low',intermediate:'badge-intermediate',high:'badge-high',veryhigh:'badge-veryhigh',special:'badge-special'};
+    var rc={low:'risk-low',intermediate:'risk-intermediate',high:'risk-high',veryhigh:'risk-veryhigh',special:'risk-special',mdt_obligatorio:'risk-mdt'};
+    var bc={low:'badge-low',intermediate:'badge-intermediate',high:'badge-high',veryhigh:'badge-veryhigh',special:'badge-special',mdt_obligatorio:'badge-mdt'};
+
+    // NIVEL 1 — Renderizado especial para casos grises MDT obligatorio
+    if(r.riesgo === 'mdt_obligatorio') {
+      var corridorHtml = r.corredores ? '<div class="corredor-box"><div style="font-size:0.82rem;font-weight:700;color:#6b0020;margin-bottom:8px">🗺️ Corredores posibles — definir en MDT con imagen:</div>'+r.corredores.map(function(c){return '<div class="corredor-item">'+c+'</div>';}).join('')+'</div>' : '';
+      document.getElementById('resultsContainer').innerHTML =
+        '<div class="result-card risk-mdt">'+
+          '<div class="result-header">🔴 <span class="badge badge-mdt">'+r.riesgoLabel+'</span></div>'+
+          '<div class="treatment-box" style="background:#fff0f5;border-left:4px solid #9b2335"><div class="treatment-title" style="color:#6b0020">⚠️ La app no puede recomendar un esquema con seguridad en este perfil</div><div class="treatment-desc" style="font-size:0.95rem;font-weight:600;color:#6b0020">Presentación obligatoria en MDT con imagen disponible antes de decidir tratamiento</div></div>'+
+          '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Por qué es un caso de adjudicación radiológica</div><div class="treatment-desc">'+r.justificacion+'</div></div>'+
+          corridorHtml+
+        '</div>'+
+        '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT — en orden de prioridad</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
+        '<div class="alert" style="background:#fff0f5;border-left:4px solid #9b2335;color:#6b0020;margin-top:10px">📚 Referencias: '+r.evidencia.join(' · ')+'</div>'+
+        '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
+        '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+        (demoMode ? '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong></div>' : '');
+      return;
+    }
+
+    // CAMBIO 6: Tipo de cirugía según altura tumoral
+    var alturaNum = parseFloat(state.altura);
+    var cirugiaTipoNota = '';
+    if(!isNaN(alturaNum) && (r.riesgo==='low'||r.riesgo==='intermediate'||r.riesgo==='high'||r.riesgo==='veryhigh')) {
+      if(alturaNum < 3) {
+        cirugiaTipoNota = '<div class="alert" style="background:#fde8e8;border-left:4px solid #c0392b;color:#7b1111;margin-top:10px">🔪 <strong>Tumor a '+alturaNum+' cm del margen anal (&lt;3 cm):</strong> Alto riesgo de <strong>APR (amputación abdominoperineal)</strong> con ostomía permanente. Evaluar posibilidad de ISR (resección interesfinteriana) según extensión al plano elevadores. Discutir con paciente ANTES de decidir esquema neoadyuvante — el deseo de preservación es especialmente relevante a esta altura.</div>';
+      } else if(alturaNum < 5) {
+        cirugiaTipoNota = '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">🔪 <strong>Tumor a '+alturaNum+' cm del margen anal (recto bajo):</strong> Riesgo intermedio de APR. Evaluar LAR ultra-baja vs ISR vs APR según distancia al plano elevadores y tamaño post-neoadyuvancia. Confirmación por cirujano con experiencia en cirugía de recto bajo recomendada.</div>';
+      } else if(alturaNum >= 5 && alturaNum <= 10) {
+        cirugiaTipoNota = '<div class="alert alert-info" style="margin-top:10px">🔪 <strong>Recto medio ('+alturaNum+' cm):</strong> LAR (resección anterior baja) con anastomosis colorrectal ± ileostomía de protección es el abordaje habitual. Preservación esfinteriana esperable en la mayoría de los casos.</div>';
+      }
+    }
+
+    // CAMBIO 8: Caso complejo — alerta MDT obligatorio
+    var casoComplejoNota = '';
+    var esComplejo = (state.crm==='amenazado' && state.emvi==='positivo' && (state.cN==='N1'||state.cN==='N2')) ||
+                     (state.cT==='cT3c' && state.crm==='amenazado') ||
+                     (state.gangliosLaterales==='sospechoso' && state.depositos==='si') ||
+                     (state.emvi==='sospechoso' && state.crm==='amenazado' && state.cN==='N2');
+    if(esComplejo) {
+      casoComplejoNota = '<div class="alert" style="background:#f0e6fa;border-left:4px solid #7c3aed;color:#4a1278;margin-top:10px">⚠️ <strong>Perfil de alta complejidad — presentación en MDT obligatoria antes de decidir.</strong> Este caso combina múltiples factores de riesgo en tensión (CRM amenazado + EMVI + N+). La recomendación de la app es orientativa. La decisión final requiere discusión formal en comité multidisciplinario con imágenes disponibles.</div>';
+    }
+
+    // CAMBIO 9: Adyuvancia post-cirugía según ypStage
+    var adyuvanciaNote = '';
+    if(r.riesgo==='low'||r.riesgo==='intermediate') {
+      adyuvanciaNote = '<div class="alert alert-info" style="margin-top:10px">💊 <strong>Adyuvancia post-cirugía (recordatorio):</strong> Definir según estadio patológico (ypStage). NCCN v1.2026: ypT3-4 o ypN+ → considerar CAPOX o FOLFOX × 4 meses. ypT1-2 N0 → no adyuvancia. Perfilado molecular (RAS/BRAF/MSI/PIK3CA) orienta decisiones adicionales.</div>';
+    }
+
+    // CAMBIO 10: RAPIDO — lenguaje matizado en el resultado
+    var rapidoNota = '';
+    if(r.esquema && r.esquema.indexOf('RAPIDO') !== -1) {
+      rapidoNota = '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">⚖️ <strong>RAPIDO — nota sobre evidencia a 5 años:</strong> RAPIDO reduce falla a distancia (20% vs 26%, HR 0.71) pero el seguimiento a 5 años mostró <em>mayor recurrencia locorregional</em> (10% vs 6% con CRT estándar). Es una opción TNT de alta evidencia para control sistémico, no el único estándar absoluto. La elección RAPIDO vs PRODIGE 23 depende del perfil de riesgo predominante (sistémico vs local) — decisión en MDT.</div>';
+    }
+
+    // CAMBIO 11: PIK3CA → aspirina en riesgo bajo (cT2N0)
+    var pikcaNote = '';
+    if(r.pikcaAlert) {
+      pikcaNote = '<div class="alert alert-info" style="margin-top:10px">💊 <strong>PIK3CA post-resección (NCCN v1.2026):</strong> Si el perfilado molecular post-cirugía muestra mutación en PIK3CA → aspirina 100-162 mg/día × 3 años (reducción de recurrencia, nivel de evidencia 2A). Solicitar perfilado molecular completo (RAS/BRAF/MSI/PIK3CA/HER2) en pieza quirúrgica.</div>';
+    }
+
+    // CAMBIO 3: Alerta roja visual para dMMR + fertilidad no satisfecha
+    var fertilityAlert = '';
+    if(r.fertilityHardStop) {
+      fertilityAlert = '<div class="alert" style="background:#fde8e8;border-left:4px solid #c0392b;color:#7b1111;margin-top:10px;font-size:0.88rem">🚨 <strong>ALERTA — MUJER CON DESEO DE FERTILIDAD + dMMR:</strong><br>La inmunoterapia (dostarlimab/checkpoint inhibitors) está <strong>contraindicada durante el embarazo</strong>. Antes de iniciar tratamiento:<br>① Derivación <strong>urgente</strong> a medicina reproductiva<br>② Discutir preservación de óvulos/embriones<br>③ Confirmar método anticonceptivo efectivo durante y post-tratamiento<br>Esta derivación es <strong>prioritaria y no puede omitirse</strong>.</div>';
+    }
+
     document.getElementById('resultsContainer').innerHTML =
       '<div class="result-card '+rc[r.riesgo]+'">'+
         '<div class="result-header">Clasificación <span class="badge '+bc[r.riesgo]+'">'+r.riesgoLabel+'</span></div>'+
@@ -975,6 +1298,16 @@
         '<div class="treatment-box"><div class="treatment-title">📋 Esquema recomendado</div><div class="treatment-desc">'+r.esquema+'</div><div style="margin-top:10px">'+r.evidencia.map(function(e){return '<span class="evidence-tag">'+e+'</span>';}).join('')+'</div></div>'
         )+
         (!r.dual ? '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Justificación</div><div class="treatment-desc">'+r.justificacion+'</div></div>' : '')+
+        fertilityAlert+
+        casoComplejoNota+
+        cirugiaTipoNota+
+        rapidoNota+
+        pikcaNote+
+        adyuvanciaNote+
+        // NIVEL 2 — advertencias contextuales
+        (r.nivel2Flags && r.nivel2Flags.ecog2Tumor ? '<div class="alert" style="background:#e8f4fd;border-left:4px solid #1a6bb5;color:#0c4a7a;margin-top:10px">💡 <strong>ECOG 2 por síntomas del tumor:</strong> El ECOG 2 puede ser reversible con el tratamiento. Considerar reevaluar tolerancia a FOLFIRINOX tras 2-3 semanas de inicio si es el esquema preferido. No asumir que LCRT estándar es la única opción por el ECOG basal.</div>' : '')+
+        (r.nivel2Flags && r.nivel2Flags.gangliosLatRapido ? '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">⚠️ <strong>Ganglios laterales + RAPIDO:</strong> RAPIDO y PRODIGE 23 no incluyeron sistemáticamente pacientes con ganglios ilíacos internos sospechosos. La cobertura del campo lateral con SCRT 5×5Gy requiere confirmación con radioterapeuta — el campo estándar puede no cubrir el ganglio lateral.</div>' : '')+
+        (r.nivel2Flags && r.nivel2Flags.rectoAltoN2 ? '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">⚠️ <strong>cT3 N2 recto alto (&gt;10cm):</strong> En recto alto, la indicación de neoadyuvancia vs cirugía directa + adyuvancia es debatida. Centros con alta calidad de TME documentada pueden optar por cirugía directa seguida de adyuvancia según ypStage — confirmar en MDT con el equipo quirúrgico.</div>' : '')+
         (r.scrtNoDisponible?'<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">⚠️ <strong>SCRT no disponible en este centro.</strong> El estándar internacional es RAPIDO. Las opciones alternativas están detalladas arriba — la decisión final es del MDT.</div>':'')+
         (r.ww?'<div class="alert alert-success">🎯 <strong>Candidato potencial a Watch &amp; Wait</strong> si logra cCR. Seguimiento cada 3 meses obligatorio.</div>':'')+
         (r.prospect?'<div class="alert alert-info">🔬 <strong>Esquema PROSPECT (NEJM 2023):</strong> FOLFOX ×6 ciclos neoadyuvante. Si respuesta ≥20% (por imagen) o mrTRG 1-3 en RMN a las 8-10 semanas → cirugía directa (TME) sin radioterapia. Si no hay respuesta adecuada → LCRT estándar y luego cirugía. Criterio de respuesta debe definirse en MDT antes de iniciar.</div>':'')+
@@ -1247,12 +1580,29 @@
     var rc={ccr:'resp-ccr',near:'resp-near',partial:'resp-partial',noresp:'resp-noresp'};
     var bc={ccr:'badge-ccr',near:'badge-near',partial:'badge-partial',noresp:'badge-noresp'};
     var ic={ccr:'✅',near:'⚠️',partial:'🔶',noresp:'❌'};
+
+    // CAMBIO 6 en reeval: tipo de cirugía según altura
+    var alturaRV = registroPrevio ? parseFloat(registroPrevio.altura) : NaN;
+    var cirugiaTipoReeval = '';
+    if(!isNaN(alturaRV) && (r.respuesta==='noresp'||r.respuesta==='partial')) {
+      if(alturaRV < 3) cirugiaTipoReeval = '<div class="alert" style="background:#fde8e8;border-left:4px solid #c0392b;color:#7b1111;margin-top:10px">🔪 <strong>Tumor a '+alturaRV+' cm del margen anal:</strong> Alto riesgo de APR con ostomía permanente. Evaluar ISR si es viable según extensión al plano elevadores. Discutir con paciente y equipo quirúrgico.</div>';
+      else if(alturaRV < 5) cirugiaTipoReeval = '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:10px">🔪 <strong>Recto bajo ('+alturaRV+' cm):</strong> Evaluar LAR ultra-baja vs ISR vs APR según hallazgos post-neoadyuvancia y experiencia del centro.</div>';
+    }
+
+    // CAMBIO 9 en reeval: adyuvancia post-cirugía recordatorio
+    var adyuvanciaReeval = '';
+    if(r.respuesta==='noresp'||r.respuesta==='partial'||(r.respuesta==='ccr'&&state.esquemaRecibido==='prospect_folfox')) {
+      adyuvanciaReeval = '<div class="alert alert-info" style="margin-top:10px">💊 <strong>Adyuvancia post-cirugía:</strong> Definir según estadio patológico (ypStage). ypT3-4 o ypN+ → considerar CAPOX o FOLFOX × 4 meses (NCCN v1.2026). ypT1-2 N0 → no adyuvancia. Solicitar perfilado molecular en pieza quirúrgica (RAS/BRAF/MSI/PIK3CA).</div>';
+    }
+
     document.getElementById('reevalResultsContainer').innerHTML =
       '<div class="result-card '+rc[r.respuesta]+'">'+
         '<div class="result-header">'+ic[r.respuesta]+' <span class="badge '+bc[r.respuesta]+'">'+r.respuestaLabel+'</span></div>'+
         '<div class="treatment-box"><div class="treatment-title">🎯 Decisión</div><div class="treatment-desc" style="font-size:1rem;font-weight:600">'+r.decision+'</div></div>'+
         '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Justificación</div><div class="treatment-desc">'+r.justificacion+'</div></div>'+
         (r.seguimiento?'<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📅 Seguimiento</div><ul style="padding-left:16px;margin-top:6px">'+r.seguimiento.map(function(s){return '<li style="font-size:0.82rem;margin-bottom:6px">'+s+'</li>';}).join('')+'</ul></div>':'')+
+        cirugiaTipoReeval+
+        adyuvanciaReeval+
       '</div>'+
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
