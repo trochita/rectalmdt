@@ -898,6 +898,44 @@
         }
         return {riesgo:'low',riesgoLabel:'Riesgo Bajo — cT1N0',esquema:esquemacT1,justificacion:justcT1,evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,mdtPreguntas:mdtcT1};
       }
+      // ── CASO GRIS 4: cT2N0 recto ultrabajo (altura <3cm o muy próximo al anillo puborectal) ──
+      // Oncológicamente bajo riesgo, pero quirúrgicamente complejo: ISR vs APR
+      // La neoadyuvancia puede cambiar el tipo de cirugía — no el pronóstico oncológico
+      var alturaCT2 = parseFloat(s.altura);
+      var esUltrabajo = !isNaN(alturaCT2) && alturaCT2 < 3;
+      var esBajo = !isNaN(alturaCT2) && alturaCT2 >= 3 && alturaCT2 < 5;
+      if(esUltrabajo) {
+        var fertGris4 = (s.sexo==='F'&&s.paridad==='no_satisfecha') ? ['⚠️ Mujer con deseo de fertilidad: discutir impacto de RT pélvica y de la cirugía (ISR/APR) sobre función reproductiva antes de decidir esquema'] : [];
+        var preservGris4 = (s.preservacion==='si') ?
+          ['El paciente expresó deseo de preservación — LCRT neoadyuvante con objetivo de downstaging para ISR o W&W es el corredor más alineado con ese objetivo'] :
+          ['Si el paciente acepta APR: cirugía directa es oncológicamente apropiada — discutir en MDT'];
+        return {
+          riesgo:'mdt_obligatorio',
+          riesgoLabel:'cT2N0 Recto Ultrabajo — Decisión Quirúrgica MDT',
+          esquema:'Bajo riesgo oncológico, pero la altura tumoral determina el tipo de cirugía y puede justificar neoadyuvancia no oncológica',
+          justificacion:'cT2N0 CRM libre — excelente pronóstico oncológico con cirugía (recurrencia local <5%). Sin embargo, con tumor a '+alturaCT2+'cm del margen anal, la cirugía directa implica ISR (resección interesfinteriana) o APR (amputación abdominoperineal con ostomía permanente). La neoadyuvancia en este perfil no busca mejorar el control oncológico sino lograr downstaging que permita: (a) una ISR menos extensa con mejor resultado funcional, o (b) Watch & Wait si hay cCR. Grupos de Bordeaux (Denost), holandés (Maas) y el IWWD documentan esta indicación. ESMO 2025 contempla neoadyuvancia en recto bajo incluso en estadios tempranos cuando el objetivo es la preservación esfinteriana. La decisión depende de la extensión exacta al plano elevadores y del deseo del paciente sobre función vs ostomía permanente.',
+          evidencia:['ESMO CPG 2025','NCCN v1.2026','IWWD','Rullier/Denost series ISR','Maas NEJM 2010'],
+          ww:true,
+          mdtObligatorio:true,
+          corredores:[
+            'Corredor A — Cirugía directa (ISR o APR): oncológicamente correcto. ISR si el tumor no invade el esfínter. APR si alcanza el plano elevadores. Sin neoadyuvancia. Discutir función anal post-ISR con el paciente.',
+            'Corredor B — LCRT neoadyuvante + reevaluar: objetivo es downstaging para reducir la extensión de la ISR o lograr cCR. Si cCR → W&W (evita cirugía). Si respuesta parcial → ISR posiblemente menos extensa.',
+            'Corredor C — OPRA (LCRT → FOLFOX consolidante): mayor tasa de cCR que LCRT solo. Indicado si la preservación es el objetivo prioritario y el paciente acepta el seguimiento estricto de W&W.'
+          ],
+          mdtPreguntas:[
+            '🔴 Distancia exacta al anillo puborectal y al plano elevadores en RMN — ¿invade el esfínter interno?',
+            '🔴 ¿APR vs ISR parcial vs ISR total? Evaluación por cirujano con experiencia en ISR',
+            '¿El paciente entiende las implicancias funcionales de ISR (síndrome de resección anterior baja, incontinencia)?',
+            '¿El paciente entiende y acepta la posibilidad de ostomía permanente si APR es inevitable?',
+            '¿El paciente tiene deseo de preservación y acepta el seguimiento W&W con riesgo de regrowth (25%)?',
+            '¿Centro con experiencia en ISR y en W&W para recto ultrabajo?',
+            '¿Si neoadyuvancia: LCRT estándar (objetivo ISR menos extensa) o OPRA (objetivo cCR + W&W)?',
+            '¿Evaluación de función esfinteriana basal antes de decidir (manometría)?'
+          ].concat(preservGris4).concat(fertGris4)
+        };
+      }
+      // cT2N0 recto bajo (3-5cm): advertencia sobre tipo de cirugía pero no es caso gris
+      // → sigue a cirugía directa con nota contextual
       return {riesgo:'low',riesgoLabel:'Riesgo Bajo — cT2N0',esquema:'Cirugía primaria (TME) sin neoadyuvancia',justificacion:'cT2N0 CRM libre sin EMVI. Recurrencia local <5% con TME de calidad. No requiere neoadyuvancia. NCCN v1.2026: perfilado molecular post-cirugía — si PIK3CA alterado → aspirina 100-162mg/día × 3 años.',evidencia:['ESMO CPG 2025','NCCN v1.2026'],ww:false,pikcaAlert:true,mdtPreguntas:['¿Grado de diferenciación?','¿Invasión linfovascular en biopsia?','¿Abordaje: laparoscópico/robótico/abierto?','¿Perfilado molecular post-resección (PIK3CA/RAS/BRAF/MSI)?'].concat(fertilityQLow)};
     }
 
