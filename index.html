@@ -103,6 +103,7 @@
     .corredor-box { background: #fff8fc; border: 1.5px solid #e0a0b8; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
     .corredor-item { font-size: 0.82rem; color: #4a0020; padding: 6px 0; border-bottom: 1px solid #f0d0e0; line-height: 1.4; }
     .corredor-item:last-child { border-bottom: none; }
+    .pdf-instruccion { display:none; margin-top:10px; background:#e8f4fd; border-left:4px solid #1a6bb5; border-radius:8px; padding:10px 14px; font-size:0.82rem; color:#0c4a7a; }
     .treatment-box { background: white; border-radius: 8px; padding: 14px; margin-top: 12px; }
     .treatment-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--primary-dark); }
     .treatment-desc { font-size: 0.82rem; color: #495057; line-height: 1.5; }
@@ -121,6 +122,8 @@
     .btn-row { margin-top: 16px; display: flex; gap: 10px; }
     @media (max-width: 400px) { .ecog-grid { grid-template-columns: repeat(3, 1fr); } .mrtrg-grid { grid-template-columns: repeat(3, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -1556,7 +1559,8 @@
         '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT — en orden de prioridad</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
         '<div class="alert" style="background:#fff0f5;border-left:4px solid #9b2335;color:#6b0020;margin-top:10px">📚 Referencias: '+r.evidencia.join(' · ')+'</div>'+
         '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
-        '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+        '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar / Descargar</button></div>'+
+      '<div id="pdfInstruccion" style="display:none;margin-top:10px;background:#e8f4fd;border-left:4px solid #1a6bb5;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#0c4a7a"></div>'+
         (demoMode ? '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong></div>' : '');
       return;
     }
@@ -1638,7 +1642,8 @@
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<div class="ai-section"><h3>🤖 Análisis IA</h3><div class="ai-response">Sin API Key — análisis por reglas de evidencia disponible arriba.</div></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
-      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-purple" onclick="startMode(\'reeval\')">🔄 Reevaluar</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar / Descargar</button></div>'+
+      '<div id="pdfInstruccion" style="display:none;margin-top:10px;background:#e8f4fd;border-left:4px solid #1a6bb5;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#0c4a7a"></div>'+
       (demoMode ?
         '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong> No se genera ningún registro en la base de datos. Volvé al inicio y elegí "Evaluación Inicial" para registrar un caso real.</div>'
       :
@@ -1678,89 +1683,116 @@
       );
   }
 
-  function buildPDFHtml(fecha, encabezadoRegistro, contenido) {
-    return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
-      '<title>RectalMDT — '+fecha+'</title>'+
-      '<style>'+
-        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#212529;font-size:13px}'+
-        'h1{font-size:1.1rem;color:#1a6bb5;margin-bottom:4px}'+
-        '.meta{font-size:0.75rem;color:#6c757d;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #e8f4fd}'+
-        '.result-card{border-radius:8px;padding:16px;margin-bottom:12px}'+
-        '.risk-low{background:#d4edda;border-left:5px solid #27ae60}'+
-        '.risk-intermediate{background:#fff3cd;border-left:5px solid #e67e22}'+
-        '.risk-high{background:#fde8e8;border-left:5px solid #c0392b}'+
-        '.risk-veryhigh{background:#f5d0d0;border-left:5px solid #7b0000}'+
-        '.risk-special{background:#f0e6fa;border-left:5px solid #7c3aed}'+
-        '.risk-mdt{background:#fff0f5;border-left:5px solid #9b2335}'+
-        '.resp-ccr{background:#d4edda;border-left:5px solid #27ae60}'+
-        '.resp-near{background:#fff3cd;border-left:5px solid #e67e22}'+
-        '.resp-partial{background:#fde8e8;border-left:5px solid #c0392b}'+
-        '.resp-noresp{background:#f5d0d0;border-left:5px solid #7b0000}'+
-        '.result-header{font-size:1rem;font-weight:700;margin-bottom:8px}'+
-        '.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:700}'+
-        '.badge-low{background:#c3e6cb;color:#155724}.badge-intermediate{background:#ffeeba;color:#856404}'+
-        '.badge-high{background:#f5c6cb;color:#7b1111}.badge-veryhigh{background:#3d1010;color:#ff8080}'+
-        '.badge-special{background:#e2d0f0;color:#4a1278}.badge-mdt{background:#f5d0db;color:#6b0020}'+
-        '.badge-ccr{background:#c3e6cb;color:#155724}.badge-near{background:#ffeeba;color:#856404}'+
-        '.badge-partial{background:#f5c6cb;color:#7b1111}.badge-noresp{background:#3d1010;color:#ff8080}'+
-        '.treatment-box{background:white;border-radius:6px;padding:12px;margin-top:10px}'+
-        '.treatment-title{font-weight:700;font-size:0.85rem;margin-bottom:4px;color:#0f4a80}'+
-        '.treatment-desc{font-size:0.8rem;color:#495057;line-height:1.5}'+
-        '.evidence-tag{display:inline-block;background:#e8f4fd;color:#1a6bb5;font-size:0.65rem;font-weight:600;padding:2px 6px;border-radius:4px;margin:4px 4px 0 0}'+
-        '.mdt-questions{background:#fff8e1;border-radius:6px;padding:12px;margin-top:10px}'+
-        '.mdt-questions h4{font-size:0.8rem;font-weight:700;color:#7d4e00;margin-bottom:8px}'+
-        '.mdt-questions ul{padding-left:16px;margin:0}'+
-        '.mdt-questions li{font-size:0.78rem;color:#5d3a00;margin-bottom:4px;line-height:1.4}'+
-        '.corredor-box{background:#fff8fc;border:1.5px solid #e0a0b8;border-radius:8px;padding:12px 14px;margin-top:10px}'+
-        '.corredor-item{font-size:0.8rem;color:#4a0020;padding:6px 0;border-bottom:1px solid #f0d0e0;line-height:1.4}'+
-        '.corredor-item:last-child{border-bottom:none}'+
-        '.alert{padding:10px 12px;border-radius:6px;font-size:0.78rem;margin-top:10px}'+
-        '.alert-success{background:#d4edda;border-left:4px solid #27ae60;color:#155724}'+
-        '.alert-info{background:#e8f4fd;border-left:4px solid #1a6bb5;color:#0c4a7a}'+
-        '.legal{font-size:0.68rem;color:#6c757d;margin-top:14px;padding:10px;background:#f8f9fa;border-radius:6px}'+
-        '.btn-row{display:none}.ai-section{display:none}'+
-        'table{border-collapse:collapse;width:100%;margin-top:8px}'+
-        'th,td{padding:5px 7px;font-size:0.75rem;text-align:left;border:1px solid #dee2e6}'+
-        'th{background:#f0f4f8;font-weight:600;color:#495057}'+
-        '@media print{body{padding:12px}button{display:none}}'+
-      '</style></head><body>'+
-      '<h1>🩺 RectalMDT v6.0</h1>'+
-      '<div class="meta">Fecha: '+fecha+' &nbsp;|&nbsp; NCCN v1.2026 · ESMO 2025 · Herramienta de soporte de decisión clínica</div>'+
-      encabezadoRegistro+
-      contenido+
-      '</body></html>';
-  }
-
   function exportPDF() {
     var fecha = new Date().toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
     var contenidoEl = document.getElementById(mode==='inicial'?'resultsContainer':'reevalResultsContainer');
     if(!contenidoEl) return;
-    var contenido = contenidoEl.innerHTML;
+
+    // Mostrar indicador de carga
+    var instrEl = document.getElementById('pdfInstruccion');
+    if(instrEl) {
+      instrEl.innerHTML = '⏳ Generando PDF...';
+      instrEl.style.display = 'block';
+    }
+
+    // Ocultar temporalmente botones y elementos que no deben ir en el PDF
+    var btnRow = contenidoEl.querySelector('.btn-row');
+    var aiSection = contenidoEl.querySelector('.ai-section');
+    var registroMod = document.getElementById('registroModule') || document.getElementById('registroModuleReeval');
+    if(btnRow) btnRow.style.display = 'none';
+    if(aiSection) aiSection.style.display = 'none';
+    if(registroMod) registroMod.style.display = 'none';
+
+    // Construir contenido para el PDF con encabezado
     var numRegistroEl = document.getElementById('registroMsg') || document.getElementById('registroMsgR');
     var numRegistro = '';
     if(!demoMode && numRegistroEl){
       var match = numRegistroEl.innerHTML.match(/URY-[A-Z0-9\-]+/);
       if(match) numRegistro = match[0];
     }
-    var encabezadoRegistro = numRegistro
-      ? '<div style="background:#1a6bb5;color:white;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem">'+
-          '📋 <strong>N° de Registro:</strong> <span style="font-size:1.1rem;font-family:monospace;letter-spacing:1px">'+numRegistro+'</span>'+
-        '</div>'
-      : (demoMode ? '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">🧪 <strong>Modo Demo</strong> — Documento sin valor de registro oficial.</div>' : '');
-    // Usar Blob URL en lugar de window.open para evitar el bloqueo de popups
-    var htmlContent = buildPDFHtml(fecha, encabezadoRegistro, contenido);
-    var blob = new Blob([htmlContent], {type: 'text/html;charset=utf-8'});
-    var url = URL.createObjectURL(blob);
-    // Abrir en nueva pestaña — los blob URLs no son bloqueados por popup blockers
-    var a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    // Revocar el URL después de un momento para liberar memoria
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
+
+    // Crear un div temporal con el contenido completo del PDF
+    var pdfDiv = document.createElement('div');
+    pdfDiv.style.cssText = 'position:fixed;top:-9999px;left:0;width:700px;background:white;padding:24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:13px;color:#212529';
+    pdfDiv.innerHTML =
+      '<div style="display:flex;align-items:center;margin-bottom:4px">'+
+        '<span style="font-size:1.1rem;font-weight:700;color:#1a6bb5">🩺 RectalMDT v6.0</span>'+
+      '</div>'+
+      '<div style="font-size:0.75rem;color:#6c757d;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e8f4fd">'+
+        'Fecha: '+fecha+' &nbsp;|&nbsp; NCCN v1.2026 · ESMO 2025 · Herramienta de soporte de decisión clínica'+
+      '</div>'+
+      (numRegistro ? '<div style="background:#1a6bb5;color:white;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem">📋 <strong>N° de Registro:</strong> <span style="font-family:monospace">'+numRegistro+'</span></div>' : '')+
+      (demoMode ? '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:0.8rem">🧪 <strong>Modo Demo</strong> — Sin valor de registro oficial.</div>' : '')+
+      contenidoEl.innerHTML;
+    document.body.appendChild(pdfDiv);
+
+    html2canvas(pdfDiv, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: 748
+    }).then(function(canvas) {
+      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      var jsPDFLib = window.jspdf ? window.jspdf.jsPDF : jsPDF;
+      var pdf = new jsPDFLib({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      var pageWidth = pdf.internal.pageSize.getWidth();
+      var pageHeight = pdf.internal.pageSize.getHeight();
+      var margin = 10;
+      var imgWidth = pageWidth - margin * 2;
+      var imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      var yPos = margin;
+      var remainingHeight = imgHeight;
+
+      // Paginar si el contenido es más largo que una página
+      while(remainingHeight > 0) {
+        if(yPos > margin) pdf.addPage();
+        var sliceHeight = Math.min(remainingHeight, pageHeight - margin * 2);
+        var sourceY = (imgHeight - remainingHeight) * (canvas.height / imgHeight);
+        var sourceHeight = sliceHeight * (canvas.height / imgHeight);
+
+        // Crear canvas de slice para esta página
+        var sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sourceHeight;
+        var sliceCtx = sliceCanvas.getContext('2d');
+        sliceCtx.drawImage(canvas, 0, -sourceY);
+        var sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+
+        pdf.addImage(sliceData, 'JPEG', margin, margin, imgWidth, sliceHeight);
+        remainingHeight -= sliceHeight;
+        yPos = margin;
+      }
+
+      var nombreArchivo = 'RectalMDT_' + fecha.replace(/\//g, '-') + '.pdf';
+      pdf.save(nombreArchivo);
+
+      // Limpiar
+      document.body.removeChild(pdfDiv);
+      if(btnRow) btnRow.style.display = '';
+      if(aiSection) aiSection.style.display = '';
+      if(registroMod) registroMod.style.display = '';
+
+      if(instrEl) {
+        instrEl.innerHTML = '✅ PDF descargado: <strong>'+nombreArchivo+'</strong>';
+        setTimeout(function(){ instrEl.style.display='none'; }, 5000);
+      }
+    }).catch(function(err) {
+      document.body.removeChild(pdfDiv);
+      if(btnRow) btnRow.style.display = '';
+      if(aiSection) aiSection.style.display = '';
+      if(registroMod) registroMod.style.display = '';
+      console.error('Error generando PDF:', err);
+      if(instrEl) {
+        instrEl.innerHTML = '⚠️ Error al generar PDF. Intentá de nuevo o usá la función de imprimir del navegador.';
+      }
+    });
   }
 
   var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUDNXuFP0fT1GM0Hfe_Klejloe5Ug4U_p2RgSLutKO3dnNe4oLAu21D0qlti7VLUzY9A/exec';
@@ -1948,7 +1980,8 @@
       '</div>'+
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
-      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar PDF</button></div>'+
+      '<div class="btn-row"><button class="btn btn-secondary" onclick="goHome()">🏠 Inicio</button><button class="btn btn-success" onclick="exportPDF()">📄 Exportar / Descargar</button></div>'+
+      '<div id="pdfInstruccion" style="display:none;margin-top:10px;background:#e8f4fd;border-left:4px solid #1a6bb5;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#0c4a7a"></div>'+
       (demoMode ?
         '<div class="alert" style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;margin-top:16px;border-radius:10px;padding:14px">🧪 <strong>Modo Demo activo.</strong> No se genera ningún registro en la base de datos. Volvé al inicio y elegí "Reevaluación" para registrar un caso real.</div>'
       :
