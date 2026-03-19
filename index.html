@@ -846,6 +846,289 @@
     document.getElementById('reevalSummary').innerHTML = lines.map(function(l){ return '• '+l; }).join('<br>') || 'Completá los pasos anteriores.';
   }
 
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CLASIFICADORES DE GUÍAS — Nivel C
+  // Funciones independientes que evalúan el mismo estado (state) según
+  // cada sistema de clasificación. No modifican la lógica de recomendación.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function clasificarESMO(s) {
+    // Criterios ESMO CPG 2025 — 5 categorías
+    var crmInv = s.crm === 'invadido';
+    var crmAmen = s.crm === 'amenazado';
+    var t4b = s.cT === 'cT4b';
+    var t4a = s.cT === 'cT4a';
+    var t3cd = s.cT === 'cT3c';
+    var t3ab = s.cT === 'cT3a';
+    var t12 = s.cT === 'cT1' || s.cT === 'cT2';
+    var n0 = s.cN === 'N0';
+    var n1 = s.cN === 'N1';
+    var n2 = s.cN === 'N2';
+    var emviPos = s.emvi === 'positivo';
+    var emviSosp = s.emvi === 'sospechoso';
+    var gangliosLat = s.gangliosLaterales === 'sospechoso';
+    var depositos = s.depositos === 'si';
+
+    // UGLY: CRM invadido, T4b, o combinación de factores de muy alto riesgo
+    if(crmInv || t4b || (emviPos && n2 && depositos)) {
+      var razon = crmInv ? 'CRM invadido' : t4b ? 'T4b (invasión de estructuras adyacentes — evaluar resecabilidad multivisceral)' : 'EMVI+ + N2 + depósitos tumorales';
+      return { categoria:'Ugly', color:'7b0000', fill:'f5d0d0',
+        descripcion:'Muy alto riesgo local y sistémico. Requiere TNT intensiva y evaluación de resecabilidad multivisceral en MDT.',
+        razon: razon };
+    }
+
+    // BAD: CRM amenazado, T4a, N2, o ganglios laterales
+    if(crmAmen || t4a || n2 || gangliosLat) {
+      var razonBad = [];
+      if(crmAmen) razonBad.push('CRM amenazado (≤1mm)');
+      if(t4a) razonBad.push('T4a (peritoneo visceral)');
+      if(n2) razonBad.push('N2 (≥4 ganglios)');
+      if(gangliosLat) razonBad.push('Ganglios laterales ilíacos internos');
+      return { categoria:'Bad', color:'c0392b', fill:'fde8e8',
+        descripcion:'Alto riesgo. TNT recomendada para reducir riesgo sistémico y local.',
+        razon: razonBad.join(' + ') };
+    }
+
+    // INTERMEDIATE: T3c/d cualquier N, o T3 N+ CRM libre, o EMVI positivo
+    if(t3cd || (t3ab && (n1||n2)) || emviPos || (emviSosp && (n1||n2||crmAmen))) {
+      var razonInt = [];
+      if(t3cd) razonInt.push('T3c/d (extensión >5mm)');
+      if(t3ab && n1) razonInt.push('T3 N1');
+      if(t3ab && n2) razonInt.push('T3 N2');
+      if(emviPos) razonInt.push('EMVI positivo');
+      if(emviSosp && (n1||n2)) razonInt.push('EMVI sospechoso + N+');
+      return { categoria:'Intermediate', color:'e67e22', fill:'fff3cd',
+        descripcion:'Riesgo intermedio. Neoadyuvancia recomendada. Elección del esquema según factores adicionales.',
+        razon: razonInt.join(' + ') };
+    }
+
+    // GOOD: T3a/b N0 CRM libre EMVI negativo/no evaluado
+    if(t3ab && n0 && !crmInv && !crmAmen && !emviPos) {
+      return { categoria:'Good', color:'27ae60', fill:'d4edda',
+        descripcion:'Bajo riesgo de recurrencia local con TME de calidad. Cirugía directa es una opción válida. Neoadyuvancia selectiva según criterios del centro.',
+        razon: 'T3a/b N0 CRM libre EMVI negativo' };
+    }
+
+    // EARLY: T1-2 N0
+    if(t12 && n0) {
+      return { categoria:'Early', color:'155724', fill:'c3e6cb',
+        descripcion:'Estadio temprano. Cirugía directa (TME o excisión local). Neoadyuvancia no indicada salvo criterios quirúrgicos especiales (recto ultrabajo).',
+        razon: s.cT + ' N0 CRM libre' };
+    }
+
+    // Fallback intermedio
+    return { categoria:'Intermediate', color:'e67e22', fill:'fff3cd',
+      descripcion:'Perfil con características de riesgo intermedio. Ver clasificación completa en MDT.',
+      razon: 'Combinación de factores' };
+  }
+
+  function clasificarNCCN(s) {
+    // NCCN v1.2026 — Estadios clínicos por cT/cN (M0)
+    var cT = s.cT, cN = s.cN;
+    var estadio, descripcion;
+
+    if(s.tc && s.tc !== 'M0') {
+      return { estadio:'Estadio IV', color:'7b0000', fill:'f5d0d0',
+        descripcion:'Enfermedad metastásica. Ver rama M1 del algoritmo.' };
+    }
+
+    var estadio, col, bg, descripcion;
+    if((cT==='cT1'||cT==='cT2') && cN==='N0') {
+      estadio='Estadio I'; col='155724'; bg='c3e6cb';
+      descripcion='cT1-2 N0 M0. Cirugía directa (TME). Considerar excisión local en cT1 con criterios favorables.';
+    } else if((cT==='cT3a'||cT==='cT3c') && cN==='N0') {
+      estadio='Estadio IIA'; col='27ae60'; bg='d4edda';
+      descripcion='cT3 N0 M0. Neoadyuvancia según características de RMN (CRM, EMVI).';
+    } else if(cT==='cT4a' && cN==='N0') {
+      estadio='Estadio IIB'; col='e67e22'; bg='fff3cd';
+      descripcion='cT4a N0 M0. Neoadyuvancia recomendada.';
+    } else if(cT==='cT4b' && cN==='N0') {
+      estadio='Estadio IIC'; col='c0392b'; bg='fde8e8';
+      descripcion='cT4b N0 M0. TNT + evaluación de resecabilidad multivisceral.';
+    } else if((cT==='cT1'||cT==='cT2') && cN==='N1') {
+      estadio='Estadio IIIA'; col='e67e22'; bg='fff3cd';
+      descripcion='cT1-2 N1 M0. Neoadyuvancia recomendada en la mayoría de los casos.';
+    } else if(((cT==='cT3a'||cT==='cT3c'||cT==='cT4a') && cN==='N1') || ((cT==='cT1'||cT==='cT2') && cN==='N2')) {
+      estadio='Estadio IIIB'; col='c0392b'; bg='fde8e8';
+      descripcion='cT3-4a N1 o cT1-2 N2 M0. TNT indicada.';
+    } else if(cT==='cT4b' && (cN==='N1'||cN==='N2')) {
+      estadio='Estadio IIIC'; col='7b0000'; bg='f5d0d0';
+      descripcion='cT4b N1-2 M0. TNT intensiva + evaluación multivisceral.';
+    } else if((cT==='cT3a'||cT==='cT3c'||cT==='cT4a') && cN==='N2') {
+      estadio='Estadio IIIC'; col='7b0000'; bg='f5d0d0';
+      descripcion='cT3-4a N2 M0. TNT intensiva. RAPIDO o PRODIGE 23.';
+    } else {
+      estadio='Estadio indeterminado'; col='495057'; bg='f8f9fa';
+      descripcion='Completar estadificación para clasificar correctamente.';
+    }
+
+    return { estadio:estadio, color:col, fill:bg, descripcion:descripcion };
+  }
+
+  function elegibilidadTrials(s) {
+    var crmInv = s.crm === 'invadido';
+    var crmAmen = s.crm === 'amenazado';
+    var t4b = s.cT === 'cT4b';
+    var t4a = s.cT === 'cT4a';
+    var t3 = s.cT === 'cT3a' || s.cT === 'cT3c';
+    var t2 = s.cT === 'cT2';
+    var t12 = s.cT === 'cT1' || t2;
+    var n0 = s.cN === 'N0';
+    var n1 = s.cN === 'N1';
+    var n2 = s.cN === 'N2';
+    var emviPos = s.emvi === 'positivo';
+    var gangliosLat = s.gangliosLaterales === 'sospechoso';
+    var depositos = s.depositos === 'si';
+    var fit = s.ecog != null && s.ecog <= 1;
+    var alturaNum = parseFloat(s.altura);
+    var altura5 = !isNaN(alturaNum) && alturaNum >= 5;
+    var altura3 = !isNaN(alturaNum) && alturaNum >= 3;
+    var dmmr = s.mmr === 'dMMR_MSI-H';
+    var m0 = !s.tc || s.tc === 'M0';
+
+    var trials = {};
+
+    // RAPIDO: al menos uno de: CRM invadido/amenazado, T4, EMVI+, N2, ganglios laterales
+    var rapidoCrit = [];
+    if(crmInv) rapidoCrit.push('CRM invadido');
+    if(crmAmen) rapidoCrit.push('CRM amenazado');
+    if(t4a||t4b) rapidoCrit.push(t4b?'T4b':'T4a');
+    if(emviPos) rapidoCrit.push('EMVI positivo');
+    if(n2) rapidoCrit.push('N2');
+    if(gangliosLat) rapidoCrit.push('Ganglios laterales');
+    trials.RAPIDO = {
+      cumple: rapidoCrit.length > 0 && m0 && s.scrtDisponible !== 'no',
+      cumpleSinScrt: rapidoCrit.length > 0 && m0,
+      criteriosCumplidos: rapidoCrit,
+      advertencia: rapidoCrit.length > 0 && gangliosLat ? '⚠️ Ganglios laterales incluidos: confirmar cobertura del campo con radioterapeuta' : null,
+      razonNoCumple: !m0 ? 'Enfermedad metastásica' : rapidoCrit.length === 0 ? 'No cumple ningún criterio de alto riesgo del trial' : s.scrtDisponible === 'no' ? 'SCRT no disponible en el centro (criterios oncológicos cumplidos)' : null
+    };
+
+    // PRODIGE 23: cT3-4 o N+ cualquiera, ECOG 0-1, M0, apto para mFOLFIRINOX
+    var prodige23Crit = (t3 || t4a || t4b || n1 || n2) && m0;
+    trials.PRODIGE23 = {
+      cumple: prodige23Crit && fit,
+      criteriosCumplidos: prodige23Crit ? [(t3||t4a||t4b)?s.cT:'', (n1||n2)?s.cN:''].filter(Boolean) : [],
+      razonNoCumple: !m0 ? 'Enfermedad metastásica' : !prodige23Crit ? 'cT1-2 N0 — no requiere TNT' : !fit ? 'ECOG ≥2 o comorbilidades que contraindican mFOLFIRINOX' : null
+    };
+
+    // OPRA: cT2-4 N0-2, candidato a preservación, M0
+    var opraEligible = (t2||t3||t4a) && m0;
+    trials.OPRA = {
+      cumple: opraEligible,
+      criteriosCumplidos: opraEligible ? [s.cT, s.cN] : [],
+      advertencia: opraEligible && s.preservacion !== 'si' ? 'Nota: OPRA fue diseñado con objetivo de preservación orgánica — confirmar que ese es el objetivo del MDT' : null,
+      razonNoCumple: !m0 ? 'Enfermedad metastásica' : t4b ? 'T4b fue excluido del trial OPRA' : !opraEligible ? 'Estadio no incluido en OPRA' : null
+    };
+
+    // PROSPECT: cT2N1 o cT3N0-N1, CRM libre >1mm, altura ≥5cm, ECOG 0-1, sin EMVI positivo confirmado
+    var prospectCrit = (t2&&n1) || (t3&&(n0||n1));
+    var prospectHeight = altura5;
+    var prospectCRM = s.crm === 'libre';
+    var prospectEMVI = s.emvi !== 'positivo';
+    trials.PROSPECT = {
+      cumple: prospectCrit && prospectHeight && prospectCRM && prospectEMVI && fit && m0,
+      criteriosCumplidos: prospectCrit && prospectHeight && prospectCRM ? [s.cT+' '+s.cN, 'CRM libre', 'Altura ≥5cm'] : [],
+      advertencia: prospectCrit && prospectCRM && prospectEMVI && fit && !prospectHeight && altura3 ?
+        '⚠️ Altura 3-5cm: PROSPECT no diseñado para recto bajo — eligibilidad marginal, discutir en MDT' : null,
+      razonNoCumple: !m0 ? 'Enfermedad metastásica' :
+        !prospectCrit ? 'Estadio no incluido (PROSPECT: cT2N1 o cT3N0-N1)' :
+        !prospectCRM ? 'CRM no libre — PROSPECT excluyó CRM amenazado/invadido (criterio <3mm del margen radial)' :
+        !prospectEMVI ? 'EMVI positivo — excluido del trial' :
+        !prospectHeight ? 'Altura <5cm — PROSPECT no diseñado para recto bajo' :
+        !fit ? 'ECOG ≥2 o comorbilidades que contraindican FOLFOX' : null
+    };
+
+    // DOSTARLIMAB (Cercek NEJM 2022): dMMR/MSI-H, cT2-4 N0-2, M0
+    var dostaElig2 = dmmr && m0 && (t2||t3||t4a||t4b);
+    trials.DOSTARLIMAB = {
+      cumple: dostaElig2,
+      criteriosCumplidos: dostaElig2 ? ['dMMR/MSI-H confirmado', s.cT, s.cN] : [],
+      advertencia: dostaElig2 && t4b ? '⚠️ T4b: datos limitados en este estadio con dostarlimab — discutir en MDT' : null,
+      razonNoCumple: !dmmr ? 'pMMR/MSS — inmunoterapia no indicada como neoadyuvancia de primera línea' :
+        !m0 ? 'Enfermedad metastásica' :
+        (s.cT==='cT1' && s.cN==='N0') ? 'cT1N0 — no es la población del trial Cercek (incluía cT2-4)' : null
+    };
+
+    return trials;
+  }
+
+  function buildGuiaPanel(s) {
+    // Returns HTML string for the classification panel
+    var esmo = clasificarESMO(s);
+    var nccn = clasificarNCCN(s);
+    var trials = elegibilidadTrials(s);
+
+    if(!s.cT || !s.cN) return '';
+
+    var html = '<div style="background:#f8f9fa;border:1.5px solid #dee2e6;border-radius:10px;padding:16px;margin-top:16px">';
+    html += '<div style="font-size:0.82rem;font-weight:700;color:#1a6bb5;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">📚 Clasificación por Guías Internacionales</div>';
+
+    // ESMO + NCCN row
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
+
+    // ESMO
+    html += '<div style="background:#fff;border-radius:8px;padding:10px 12px;border:1.5px solid #dee2e6">';
+    html += '<div style="font-size:0.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;margin-bottom:4px">ESMO 2025</div>';
+    html += '<div style="font-size:1rem;font-weight:700;color:#'+esmo.color+'">'+esmo.categoria+'</div>';
+    html += '<div style="font-size:0.75rem;color:#495057;margin-top:4px;line-height:1.4">'+esmo.razon+'</div>';
+    html += '<div style="font-size:0.72rem;color:#6c757d;margin-top:6px;font-style:italic;line-height:1.3">'+esmo.descripcion+'</div>';
+    html += '</div>';
+
+    // NCCN
+    html += '<div style="background:#fff;border-radius:8px;padding:10px 12px;border:1.5px solid #dee2e6">';
+    html += '<div style="font-size:0.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;margin-bottom:4px">NCCN v1.2026</div>';
+    html += '<div style="font-size:1rem;font-weight:700;color:#'+nccn.color+'">'+nccn.estadio+'</div>';
+    html += '<div style="font-size:0.75rem;color:#495057;margin-top:6px;line-height:1.4;font-style:italic">'+nccn.descripcion+'</div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    // Trials eligibility
+    html += '<div style="font-size:0.78rem;font-weight:700;color:#495057;margin-bottom:8px">Elegibilidad en trials principales:</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.78rem">';
+    html += '<tr style="background:#f0f4f8"><th style="text-align:left;padding:6px 8px;color:#495057">Trial</th><th style="padding:6px 8px;text-align:center;color:#495057">Elegible</th><th style="text-align:left;padding:6px 8px;color:#495057">Criterios / Notas</th></tr>';
+
+    var trialOrder = ['RAPIDO','PRODIGE23','OPRA','PROSPECT','DOSTARLIMAB'];
+    var trialNames = {RAPIDO:'RAPIDO',PRODIGE23:'PRODIGE 23',OPRA:'OPRA',PROSPECT:'PROSPECT',DOSTARLIMAB:'Dostarlimab'};
+
+    trialOrder.forEach(function(t) {
+      var tr = trials[t];
+      if(!tr) return;
+      var cumple = tr.cumple;
+      var icon = cumple ? '✅' : (tr.razonNoCumple ? '❌' : '⚠️');
+      var bgRow = cumple ? '#f0fdf0' : '#fff';
+
+      // Special case: RAPIDO cumple oncológico pero sin SCRT
+      if(t==='RAPIDO' && !cumple && tr.cumpleSinScrt) {
+        icon = '⚠️';
+        bgRow = '#fffdf0';
+      }
+
+      html += '<tr style="background:'+bgRow+';border-top:1px solid #dee2e6">';
+      html += '<td style="padding:6px 8px;font-weight:600">'+trialNames[t]+'</td>';
+      html += '<td style="padding:6px 8px;text-align:center;font-size:1rem">'+icon+'</td>';
+      html += '<td style="padding:6px 8px;color:#495057">';
+
+      if(cumple && tr.criteriosCumplidos && tr.criteriosCumplidos.length) {
+        html += tr.criteriosCumplidos.filter(Boolean).join(' · ');
+      } else if(!cumple && tr.razonNoCumple) {
+        html += '<span style="color:#c0392b">'+tr.razonNoCumple+'</span>';
+      }
+      if(tr.advertencia) {
+        html += '<br><span style="color:#856404;font-size:0.72rem">'+tr.advertencia+'</span>';
+      }
+      if(t==='RAPIDO' && !tr.cumple && tr.cumpleSinScrt) {
+        html += '<span style="color:#856404">Criterios oncológicos cumplidos — SCRT no disponible en el centro</span>';
+      }
+      html += '</td></tr>';
+    });
+
+    html += '</table></div>';
+    return html;
+  }
+
   function analyzeRules() {
     var s=state;
 
@@ -1269,6 +1552,7 @@
           '<div class="treatment-box" style="margin-top:10px"><div class="treatment-title">📖 Por qué es un caso de adjudicación radiológica</div><div class="treatment-desc">'+r.justificacion+'</div></div>'+
           corridorHtml+
         '</div>'+
+        buildGuiaPanel(state)+
         '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT — en orden de prioridad</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
         '<div class="alert" style="background:#fff0f5;border-left:4px solid #9b2335;color:#6b0020;margin-top:10px">📚 Referencias: '+r.evidencia.join(' · ')+'</div>'+
         '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
@@ -1350,6 +1634,7 @@
         (r.ww?'<div class="alert alert-success">🎯 <strong>Candidato potencial a Watch &amp; Wait</strong> si logra cCR. Seguimiento cada 3 meses obligatorio.</div>':'')+
         (r.prospect?'<div class="alert alert-info">🔬 <strong>Esquema PROSPECT (NEJM 2023):</strong> FOLFOX ×6 ciclos neoadyuvante. Si respuesta ≥20% (por imagen) o mrTRG 1-3 en RMN a las 8-10 semanas → cirugía directa (TME) sin radioterapia. Si no hay respuesta adecuada → LCRT estándar y luego cirugía. Criterio de respuesta debe definirse en MDT antes de iniciar.</div>':'')+
       '</div>'+
+      buildGuiaPanel(state)+
       '<div class="mdt-questions"><h4>❓ Preguntas clave para el MDT</h4><ul>'+r.mdtPreguntas.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ul></div>'+
       '<div class="ai-section"><h3>🤖 Análisis IA</h3><div class="ai-response">Sin API Key — análisis por reglas de evidencia disponible arriba.</div></div>'+
       '<p class="legal">⚠️ Herramienta de soporte de decisión clínica. No reemplaza el juicio del médico tratante ni la discusión en MDT.</p>'+
@@ -1393,24 +1678,8 @@
       );
   }
 
-  function exportPDF() {
-    var fecha = new Date().toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
-    var contenido = document.getElementById(mode==='inicial'?'resultsContainer':'reevalResultsContainer').innerHTML;
-    // número de registro guardado tras enviar (si existe)
-    var numRegistroEl = document.getElementById('registroMsg') || document.getElementById('registroMsgR');
-    var numRegistro = '';
-    if(!demoMode && numRegistroEl){
-      var match = numRegistroEl.innerHTML.match(/URY-[A-Z0-9\-]+/);
-      if(match) numRegistro = match[0];
-    }
-    var encabezadoRegistro = numRegistro
-      ? '<div style="background:#1a6bb5;color:white;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem">'+
-          '📋 <strong>N° de Registro:</strong> <span style="font-size:1.1rem;font-family:monospace;letter-spacing:1px">'+numRegistro+'</span>'+
-        '</div>'
-      : (demoMode ? '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">🧪 <strong>Modo Demo</strong> — Documento sin valor de registro oficial.</div>' : '');
-    var win = window.open('','_blank');
-    win.document.write(
-      '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
+  function buildPDFHtml(fecha, encabezadoRegistro, contenido) {
+    return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
       '<title>RectalMDT — '+fecha+'</title>'+
       '<style>'+
         'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:700px;margin:0 auto;padding:24px;color:#212529;font-size:13px}'+
@@ -1422,6 +1691,7 @@
         '.risk-high{background:#fde8e8;border-left:5px solid #c0392b}'+
         '.risk-veryhigh{background:#f5d0d0;border-left:5px solid #7b0000}'+
         '.risk-special{background:#f0e6fa;border-left:5px solid #7c3aed}'+
+        '.risk-mdt{background:#fff0f5;border-left:5px solid #9b2335}'+
         '.resp-ccr{background:#d4edda;border-left:5px solid #27ae60}'+
         '.resp-near{background:#fff3cd;border-left:5px solid #e67e22}'+
         '.resp-partial{background:#fde8e8;border-left:5px solid #c0392b}'+
@@ -1430,7 +1700,7 @@
         '.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:0.7rem;font-weight:700}'+
         '.badge-low{background:#c3e6cb;color:#155724}.badge-intermediate{background:#ffeeba;color:#856404}'+
         '.badge-high{background:#f5c6cb;color:#7b1111}.badge-veryhigh{background:#3d1010;color:#ff8080}'+
-        '.badge-special{background:#e2d0f0;color:#4a1278}'+
+        '.badge-special{background:#e2d0f0;color:#4a1278}.badge-mdt{background:#f5d0db;color:#6b0020}'+
         '.badge-ccr{background:#c3e6cb;color:#155724}.badge-near{background:#ffeeba;color:#856404}'+
         '.badge-partial{background:#f5c6cb;color:#7b1111}.badge-noresp{background:#3d1010;color:#ff8080}'+
         '.treatment-box{background:white;border-radius:6px;padding:12px;margin-top:10px}'+
@@ -1441,22 +1711,56 @@
         '.mdt-questions h4{font-size:0.8rem;font-weight:700;color:#7d4e00;margin-bottom:8px}'+
         '.mdt-questions ul{padding-left:16px;margin:0}'+
         '.mdt-questions li{font-size:0.78rem;color:#5d3a00;margin-bottom:4px;line-height:1.4}'+
+        '.corredor-box{background:#fff8fc;border:1.5px solid #e0a0b8;border-radius:8px;padding:12px 14px;margin-top:10px}'+
+        '.corredor-item{font-size:0.8rem;color:#4a0020;padding:6px 0;border-bottom:1px solid #f0d0e0;line-height:1.4}'+
+        '.corredor-item:last-child{border-bottom:none}'+
         '.alert{padding:10px 12px;border-radius:6px;font-size:0.78rem;margin-top:10px}'+
         '.alert-success{background:#d4edda;border-left:4px solid #27ae60;color:#155724}'+
         '.alert-info{background:#e8f4fd;border-left:4px solid #1a6bb5;color:#0c4a7a}'+
         '.legal{font-size:0.68rem;color:#6c757d;margin-top:14px;padding:10px;background:#f8f9fa;border-radius:6px}'+
-        '.btn-row{display:none}'+
-        '.ai-section{display:none}'+
+        '.btn-row{display:none}.ai-section{display:none}'+
+        'table{border-collapse:collapse;width:100%;margin-top:8px}'+
+        'th,td{padding:5px 7px;font-size:0.75rem;text-align:left;border:1px solid #dee2e6}'+
+        'th{background:#f0f4f8;font-weight:600;color:#495057}'+
         '@media print{body{padding:12px}button{display:none}}'+
       '</style></head><body>'+
-      '<h1>🩺 RectalMDT</h1>'+
-      '<div class="meta">Fecha: '+fecha+' &nbsp;|&nbsp; Herramienta de soporte de decisión clínica — NCCN v1.2026 · ESMO 2025</div>'+
+      '<h1>🩺 RectalMDT v6.0</h1>'+
+      '<div class="meta">Fecha: '+fecha+' &nbsp;|&nbsp; NCCN v1.2026 · ESMO 2025 · Herramienta de soporte de decisión clínica</div>'+
       encabezadoRegistro+
       contenido+
-      '</body></html>'
-    );
-    win.document.close();
-    setTimeout(function(){ win.print(); }, 500);
+      '</body></html>';
+  }
+
+  function exportPDF() {
+    var fecha = new Date().toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
+    var contenidoEl = document.getElementById(mode==='inicial'?'resultsContainer':'reevalResultsContainer');
+    if(!contenidoEl) return;
+    var contenido = contenidoEl.innerHTML;
+    var numRegistroEl = document.getElementById('registroMsg') || document.getElementById('registroMsgR');
+    var numRegistro = '';
+    if(!demoMode && numRegistroEl){
+      var match = numRegistroEl.innerHTML.match(/URY-[A-Z0-9\-]+/);
+      if(match) numRegistro = match[0];
+    }
+    var encabezadoRegistro = numRegistro
+      ? '<div style="background:#1a6bb5;color:white;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem">'+
+          '📋 <strong>N° de Registro:</strong> <span style="font-size:1.1rem;font-family:monospace;letter-spacing:1px">'+numRegistro+'</span>'+
+        '</div>'
+      : (demoMode ? '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">🧪 <strong>Modo Demo</strong> — Documento sin valor de registro oficial.</div>' : '');
+    // Usar Blob URL en lugar de window.open para evitar el bloqueo de popups
+    var htmlContent = buildPDFHtml(fecha, encabezadoRegistro, contenido);
+    var blob = new Blob([htmlContent], {type: 'text/html;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    // Abrir en nueva pestaña — los blob URLs no son bloqueados por popup blockers
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Revocar el URL después de un momento para liberar memoria
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
   }
 
   var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUDNXuFP0fT1GM0Hfe_Klejloe5Ug4U_p2RgSLutKO3dnNe4oLAu21D0qlti7VLUzY9A/exec';
