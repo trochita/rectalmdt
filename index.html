@@ -165,6 +165,14 @@
       </div>
     </div>
     <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px">
+      <a href="./manual.pdf" download="RectalMDT_Manual_Usuario.pdf" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+        📖 Manual de uso
+      </a>
+      <a href="./algoritmo.pdf" download="RectalMDT_Algoritmo_Decision.pdf" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+        📋 Algoritmo de decisión
+      </a>
+    </div>
   </div>
 
   <!-- DEMO SELECTOR -->
@@ -388,6 +396,15 @@
           <div class="radio-group">
             <div class="radio-option" data-field="scrtDisponible" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — disponible en el centro</div></div>
             <div class="radio-option" data-field="scrtDisponible" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — no disponible en el centro</div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>¿El centro tiene experiencia en seguimiento post-dostarlimab / inmunoterapia neoadyuvante?</label>
+          <div class="hint">Incluye: acceso a PET-CT, equipo con experiencia en respuesta inmunomediada, y protocolo de W&W post-inmunoterapia</div>
+          <div class="radio-group">
+            <div class="radio-option" data-field="centroExpDosta" data-val="si"><div class="radio-dot"></div><div class="label-text">✅ Sí — centro con experiencia o protocolo activo</div></div>
+            <div class="radio-option" data-field="centroExpDosta" data-val="no"><div class="radio-dot"></div><div class="label-text">❌ No — sin experiencia específica en inmunoterapia neoadyuvante</div></div>
+            <div class="radio-option" data-field="centroExpDosta" data-val="derivar"><div class="radio-dot"></div><div class="label-text">⚠️ No — pero con posibilidad de derivación a centro de referencia</div></div>
           </div>
         </div>
         <div class="field">
@@ -627,7 +644,7 @@
     edad:null,sexo:null,ecog:null,mmr:null,comorbilidades:[],preservacion:null,
     cT:null,cN:null,crm:null,emvi:null,altura:null,tamano:null,circunferencia:null,
     gangliosLaterales:null,depositos:null,cea:null,distanciaDRE:null,dre:null,
-    tc:null,observaciones:'',apiKey:null,scrtDisponible:null,
+    tc:null,observaciones:'',apiKey:null,scrtDisponible:null,centroExpDosta:null,
     paridad:null,
     histoGrado:null,ilv:null,budding:null,
     ecog2causa:null,
@@ -652,24 +669,26 @@
     if(val!=='F') state.paridad = null;
   }
 
-  document.querySelectorAll('.radio-option[data-field]').forEach(function(el){
-    el.addEventListener('click', function(){
-      var field = el.dataset.field;
-      var val = el.dataset.val;
-      state[field] = val;
-      el.closest('.radio-group').querySelectorAll('.radio-option').forEach(function(o){ o.classList.remove('selected'); });
-      el.classList.add('selected');
-      if(field === 'esquemaRecibido'){
-        document.getElementById('prospectRespField').style.display = (val === 'prospect_folfox') ? 'block' : 'none';
-        if(val !== 'prospect_folfox') state.prospectResp = null;
-      }
-      if(field === 'cT'){
-        var ct1Block = document.getElementById('ct1CriteriosBlock');
-        if(ct1Block) ct1Block.style.display = (val === 'cT1') ? 'block' : 'none';
-        if(val !== 'cT1'){ state.histoGrado=null; state.ilv=null; state.budding=null; }
-      }
-      if(field === 'regConcordancia' || field === 'regConcordanciaR'){ state[field] = val; }
-    });
+  document.addEventListener('click', function(ev){
+    var el = ev.target.closest('.radio-option[data-field]');
+    if(!el) return;
+    var field = el.dataset.field;
+    var val = el.dataset.val;
+    state[field] = val;
+    var group = el.closest('.radio-group');
+    if(group) group.querySelectorAll('.radio-option').forEach(function(o){ o.classList.remove('selected'); });
+    el.classList.add('selected');
+    if(field === 'esquemaRecibido'){
+      var prospectRespField = document.getElementById('prospectRespField');
+      if(prospectRespField) prospectRespField.style.display = (val === 'prospect_folfox') ? 'block' : 'none';
+      if(val !== 'prospect_folfox') state.prospectResp = null;
+    }
+    if(field === 'cT'){
+      var ct1Block = document.getElementById('ct1CriteriosBlock');
+      if(ct1Block) ct1Block.style.display = (val === 'cT1') ? 'block' : 'none';
+      if(val !== 'cT1'){ state.histoGrado=null; state.ilv=null; state.budding=null; }
+    }
+    if(field === 'regConcordancia' || field === 'regConcordanciaR'){ state[field] = val; }
   });
 
   document.querySelectorAll('.checkbox-option[data-val]').forEach(function(el){
@@ -1045,13 +1064,18 @@
 
     // DOSTARLIMAB (Cercek NEJM 2022): dMMR/MSI-H, cT2-4 N0-2, M0
     var dostaElig2 = dmmr && m0 && (t2||t3||t4a||t4b);
+    var dostaConExp = dostaElig2 && s.centroExpDosta === 'si';
+    var dostaDerivacion = dostaElig2 && (s.centroExpDosta === 'no' || s.centroExpDosta === 'derivar');
     trials.DOSTARLIMAB = {
-      cumple: dostaElig2,
-      criteriosCumplidos: dostaElig2 ? ['dMMR/MSI-H confirmado', s.cT, s.cN] : [],
-      advertencia: dostaElig2 && t4b ? '⚠️ T4b: datos limitados en este estadio con dostarlimab — discutir en MDT' : null,
+      cumple: dostaConExp,
+      criteriosCumplidos: dostaConExp ? ['dMMR/MSI-H confirmado', s.cT, s.cN, 'Centro con experiencia'] : [],
+      advertencia: dostaDerivacion ? '⚠️ Criterios oncológicos cumplidos — requiere derivación o acreditar experiencia del centro' :
+        dostaElig2 && t4b ? '⚠️ T4b: datos limitados con dostarlimab — discutir en MDT' :
+        dostaElig2 && !s.centroExpDosta ? '⚠️ Especificar experiencia del centro para evaluar elegibilidad' : null,
       razonNoCumple: !dmmr ? 'pMMR/MSS — inmunoterapia no indicada como neoadyuvancia de primera línea' :
         !m0 ? 'Enfermedad metastásica' :
-        (s.cT==='cT1' && s.cN==='N0') ? 'cT1N0 — no es la población del trial Cercek (incluía cT2-4)' : null
+        (s.cT==='cT1' && s.cN==='N0') ? 'cT1N0 — no es la población del trial Cercek (incluía cT2-4)' :
+        dostaDerivacion ? 'Criterios oncológicos ✅ — requiere derivación a centro de referencia' : null
     };
 
     return trials;
@@ -1150,7 +1174,45 @@
       var fertilityHardStop = (s.sexo==='F' && s.paridad==='no_satisfecha');
       var fertilityDMMR = fertilityHardStop ? ['⚠️ ATENCIÓN: Mujer con deseo de fertilidad y dMMR — derivación urgente a medicina reproductiva ANTES de iniciar dostarlimab.','¿Preservación de óvulos/embriones antes de iniciar tratamiento?'] : [];
       var dostaMDT = ['¿Confirmación IHQ/PCR dMMR/MSI-H (dual método)?','¿Ausencia de mutación BRAF V600E (Lynch vs esporádico)?','¿Estadio ≥cT2 confirmado?','¿Disponibilidad del checkpoint inhibitor elegido?','¿Candidato a W&W si logra cCR a los 6 meses?','¿Plan de seguimiento: RMN + endoscopía + DRE cada 3 meses × 2 años?','⚠️ mrTRG puede ser menos confiable en respuesta inmunomediada — considerar PET-CT en reevaluación'].concat(fertilityDMMR);
-      return {riesgo:'special',riesgoLabel:'dMMR / MSI-H — M0 confirmado',esquema:'Checkpoint inhibitor neoadyuvante: dostarlimab 500mg c/3 sem × 6 meses (u opciones equivalentes: nivolumab, pembrolizumab, cemiplimab — NCCN v1.2026)',justificacion:'Tumor con déficit de reparación de DNA, enfermedad localizada M0. Cercek NEJM 2022: 100% cCR con dostarlimab. Puede evitar quimiorradioterapia y cirugía. NO debe recibir QRT convencional como primera línea en dMMR. ⚠️ El patrón de regresión inmunomediada puede generar edema inflamatorio que mimetiza tumor en RMN.',evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],ww:true,fertilityHardStop:fertilityHardStop,mdtPreguntas:dostaMDT};
+      // Sin experiencia en el centro → derivación, no recomendación directa
+      if(s.centroExpDosta === 'no') {
+        return {riesgo:'mdt_obligatorio',riesgoLabel:'dMMR/MSI-H — Derivación a Centro de Referencia',
+          esquema:'Centro sin experiencia en inmunoterapia neoadyuvante — derivar antes de iniciar dostarlimab',
+          justificacion:'Tumor dMMR/MSI-H confirmado, M0, candidato a dostarlimab. Sin embargo, el ensayo de Cercek (NEJM 2022) es un estudio fase 2 monoinstitucional en pacientes muy seleccionados. El seguimiento post-dostarlimab requiere: (1) experiencia en interpretación de respuesta inmunomediada en RMN (el edema puede mimetizar tumor residual), (2) acceso a PET-CT para reevaluación formal, (3) protocolo de W&W con controles cada 3 meses y equipo entrenado. Sin estas condiciones, iniciar dostarlimab localmente no es seguro — la indicación es correcta pero el contexto no lo es.',
+          evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],
+          ww:false,mdtObligatorio:true,
+          corredores:[
+            'Corredor A — Derivación a centro de referencia con experiencia en dostarlimab/inmunoterapia neoadyuvante (recomendado)',
+            'Corredor B — Si derivación no es posible: discutir en MDT si LCRT estándar es alternativa transitoria hasta acceso a centro de referencia',
+            'Corredor C — Si el centro puede certificar acceso a PET-CT y protocolo de seguimiento: reconsiderar dostarlimab con MDT formal'
+          ],
+          mdtPreguntas:[
+            '🔴 ¿Centro de referencia con experiencia en dostarlimab disponible en el país/región?',
+            '¿Timing: urgencia clínica que impide derivación?',
+            '¿Acceso a PET-CT para reevaluación post-tratamiento?',
+            '¿Equipo con experiencia en interpretación de mrTRG post-inmunoterapia?',
+            '¿Protocolo de W&W con controles cada 3 meses disponible?',
+            '¿Confirmación IHQ/PCR dMMR/MSI-H con método dual?'
+          ].concat(fertilityDMMR)};
+      }
+      if(s.centroExpDosta === 'derivar') {
+        return {riesgo:'special',riesgoLabel:'dMMR / MSI-H — Gestionar Derivación',
+          esquema:'Indicación correcta — gestionar derivación a centro de referencia para iniciar dostarlimab',
+          justificacion:'Tumor dMMR/MSI-H M0 con indicación de dostarlimab confirmada. El centro actual no tiene experiencia específica pero hay posibilidad de derivación. La derivación es la opción correcta: el seguimiento post-dostarlimab (PET-CT, mrTRG específico, W&W cada 3 meses) requiere equipo entrenado. Cercek NEJM 2022: estudio fase 2, monoinstitucional — la extrapolación a centros sin experiencia no está validada.',
+          evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],
+          ww:false,fertilityHardStop:fertilityHardStop,
+          mdtPreguntas:[
+            '🔴 Gestionar derivación a centro de referencia — prioridad alta',
+            '¿Timing de derivación vs urgencia clínica?',
+            '¿Centro de referencia identificado?',
+            '¿Confirmación IHQ/PCR dMMR/MSI-H documentada para remisión?'
+          ].concat(fertilityDMMR)};
+      }
+      return {riesgo:'special',riesgoLabel:'dMMR / MSI-H — M0 confirmado',
+        esquema:'Checkpoint inhibitor neoadyuvante: dostarlimab 500mg c/3 sem × 6 meses\n(alternativas: nivolumab, pembrolizumab, cemiplimab — NCCN v1.2026)',
+        justificacion:'Tumor con déficit de reparación de DNA, M0 confirmado, centro con experiencia. Cercek NEJM 2022 (estudio fase 2, monoinstitucional, n=12→16): 100% cCR con dostarlimab. Evidencia extraordinaria pero limitada — generalización requiere cautela. Puede evitar QRT y cirugía. ⚠️ Patrón de regresión inmunomediada: edema inflamatorio puede mimetizar tumor en RMN — el mrTRG puede sobreestimar tumor residual. PET-CT recomendado en reevaluación formal.',
+        evidencia:['Cercek NEJM 2022','NCCN v1.2026','ESMO 2025'],
+        ww:true,fertilityHardStop:fertilityHardStop,mdtPreguntas:dostaMDT};
     }
     if(s.mmr==='pendiente' && s.tc==='M0') {
       var esUrgente = s.cT==='cT4b' || s.crm==='invadido';
@@ -1325,6 +1387,31 @@
     }
 
     // ════════════════════════════════════════════════════════════════════
+    // CASO GRIS 5: ECOG 2 mixto + neuropatía + perfil que requeriría intensificación
+    var neuropatia = s.comorbilidades && s.comorbilidades.includes('neuropatia');
+    var ecog2Mixto = s.ecog === 2 && s.ecog2causa === 'mixto';
+    var requiereIntensificacion = (s.emvi === 'positivo' || s.cN === 'N2' || s.cT === 'cT3c' || depositos) && !crmInv && !t4b && !t4a;
+    if(ecog2Mixto && neuropatia && requiereIntensificacion) {
+      return {riesgo:'mdt_obligatorio',riesgoLabel:'ECOG 2 Mixto + Neuropatía — Intensificación en Tensión',
+        esquema:'La app no puede recomendar esquema intensivo con seguridad en este perfil funcional',
+        justificacion:'Perfil oncológico (EMVI+/N2/T3c/depósitos) que normalmente indicaría PRODIGE 23 o TNT. Sin embargo: ECOG 2 mixto con neuropatía periférica preexistente contraindica mFOLFIRINOX y hace de alto riesgo el CAPOX. La LCRT estándar es la opción más conservadora pero puede ser insuficiente oncológicamente. Requiere balance riesgo-beneficio individual en MDT con evaluación funcional detallada.',
+        evidencia:['NCCN v1.2026','ESMO 2025','PRODIGE 23 2024'],
+        ww:false,mdtObligatorio:true,
+        corredores:[
+          'Corredor A — LCRT estándar (50.4Gy + capecitabina): menor toxicidad sistémica, compromiso en control oncológico vs TNT',
+          'Corredor B — Evaluación funcional formal: si ECOG mejora con tratamiento del tumor, reconsiderar FOLFIRINOX con dosis reducidas',
+          'Corredor C — PRODIGE 23 con modificación de dosis o cambio a FOLFOX si neuropatía leve (grado 1-2): si MDT decide que el beneficio justifica el riesgo'
+        ],
+        mdtPreguntas:[
+          '🔴 Evaluación funcional/geriátrica formal — ¿el ECOG 2 es parcialmente reversible con soporte?',
+          '🔴 Grado de neuropatía periférica (grado 1-2 puede permitir FOLFOX con reducción de dosis)',
+          '¿Función renal actual (filtrado glomerular)?',
+          '¿Evaluación nutricional (albúmina, peso)?',
+          '¿Paciente y familia informados del balance toxicidad vs beneficio oncológico?',
+          '¿Consulta con oncólogo médico antes de decidir esquema?'
+        ]};
+    }
+
     // NIVEL 2 — flags para advertencias contextuales en el resultado
     // ════════════════════════════════════════════════════════════════════
     var flagEcog2Tumor = (s.ecog===2 && s.ecog2causa==='tumor');
@@ -1369,8 +1456,10 @@
 
     // ── Riesgo intermedio ─────────────────────────────────────────────────
     var alturaNum=parseFloat(s.altura), rectoAlto2=alturaNum>10, rectoBajo=alturaNum<5;
-    var prospectEligible=fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoBajo && ((s.cT==='cT2'&&s.cN==='N1')||(s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')));
-    var dualOption=fit && s.cT==='cT3a' && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoAlto2 && !rectoBajo;
+    var probableAPR = !isNaN(alturaNum) && alturaNum < 3;
+    // PROSPECT: excluye recto bajo (<5cm), probable APR (<3cm), CRM amenazado, T4, N2, ganglios laterales, EMVI+
+    var prospectEligible=fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoBajo && !probableAPR && ((s.cT==='cT2'&&s.cN==='N1')||(s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')));
+    var dualOption=fit && s.cT==='cT3a' && s.cN==='N0' && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && !rectoAlto2 && !rectoBajo && !probableAPR;
 
     // Recto bajo (<5cm) perfil intermedio — PROSPECT no aplica
     if(rectoBajo && fit && s.crm==='libre' && (s.emvi==='negativo'||!s.emvi) && !gangliosLat && !depositos && ((s.cT==='cT2'&&s.cN==='N1')||(s.cT==='cT3a'&&(s.cN==='N0'||s.cN==='N1')))) {
@@ -1400,7 +1489,7 @@
     var s=state, mrtrg=s.mrtrg, dwi=s.dwi, drePost=s.drePost, endoPost=s.endoPost, biopsia=s.biopsiaPost, crmPost=s.crmPost;
     if(s.esquemaRecibido === 'prospect_folfox'){
       if(s.prospectResp === 'resp_buena' || (mrtrg && mrtrg <= 3)){
-        return {respuesta:'ccr',respuestaLabel:'Respuesta adecuada post-FOLFOX — PROSPECT',decision:'Cirugía directa (TME) — sin radioterapia',justificacion:'Respuesta ≥20% o mrTRG 1-3 post-FOLFOX. Criterio PROSPECT cumplido: cirugía directa (TME) sin necesidad de CRT. DFS a 5 años equivalente al brazo CRT (80.8% vs 78.6%, NEJM 2023). Se evita toxicidad pélvica de la radioterapia.',seguimiento:['Cirugía TME en las próximas semanas (ventana óptima: 4-8 sem post-FOLFOX)','Sin radioterapia preoperatoria','Adyuvancia post-cirugía según estadio patológico (ypStage)','Seguimiento estándar post-TME'],mdtPreguntas:['¿Confirmar respuesta ≥20% en RMN comparativa basal vs post-FOLFOX?','¿mrTRG 1-3 en RMN de calidad?','¿CRM libre post-FOLFOX?','¿Tipo de cirugía: LAR vs APR?','¿Timing cirugía: 4-8 semanas post-último ciclo?','¿Adyuvancia según ypStage?']};
+        return {respuesta:'ccr',respuestaLabel:'Respuesta adecuada post-FOLFOX — PROSPECT',decision:'Cirugía directa (TME) — sin radioterapia',justificacion:'Criterio de respuesta: (1) Criterio del protocolo PROSPECT: reducción volumétrica ≥20% en imagen (RMN comparativa basal vs post-FOLFOX). (2) Criterio radiológico operativo de esta app: mrTRG 1-3 como complemento cuando la medición volumétrica no está disponible — este criterio no fue el validado en el trial original sino una aproximación clínica razonable. Si hay discordancia entre ambos criterios, priorizar la RMN comparativa volumétrica. DFS a 5 años: 80.8% vs 78.6% (no inferioridad, NEJM 2023). Se evita toxicidad pélvica.',seguimiento:['Cirugía TME en las próximas semanas (ventana óptima: 4-8 sem post-FOLFOX)','Sin radioterapia preoperatoria','Adyuvancia post-cirugía según estadio patológico (ypStage)','Seguimiento estándar post-TME'],mdtPreguntas:['¿Confirmar respuesta ≥20% en RMN comparativa basal vs post-FOLFOX?','¿mrTRG 1-3 en RMN de calidad?','¿CRM libre post-FOLFOX?','¿Tipo de cirugía: LAR vs APR?','¿Timing cirugía: 4-8 semanas post-último ciclo?','¿Adyuvancia según ypStage?']};
       }
       if(s.prospectResp === 'resp_insuf' || (mrtrg && mrtrg >= 4)){
         return {respuesta:'partial',respuestaLabel:'Respuesta insuficiente post-FOLFOX — PROSPECT',decision:'CRT estándar de rescate → luego cirugía (TME)',justificacion:'Reducción <20% o mrTRG 4-5 post-FOLFOX. No se alcanzó el criterio de respuesta PROSPECT. Indicación de CRT estándar (50.4Gy + capecitabina) antes de la cirugía, según protocolo PROSPECT original (brazo de rescate).',seguimiento:['Iniciar LCRT estándar (50.4Gy + capecitabina)','Reevaluar respuesta post-CRT (8-12 semanas)','Cirugía TME tras completar CRT','Considerar nueva RMN pre-cirugía'],mdtPreguntas:['¿Confirmar criterio de no-respuesta (RMN comparativa)?','¿Contraindicaciones para CRT estándar?','¿Re-estadificar con RMN después de CRT?','¿Preservación orgánica aún posible si logra cCR tras CRT?']};
@@ -1532,7 +1621,7 @@
       return {respuesta:'near',respuestaLabel:'Near-Complete Response (nCR)',
         decision:timingDecision,
         justificacion:'mrTRG '+mrtrg+' con hallazgos favorables en DRE y endoscopía. '+(dwiW?'DWI '+dwi+' genera incertidumbre adicional. ':'DWI favorable. ')+timingJust+'<br><br>⚠️ <strong>Advertencia — OPRA secundario (Ann Surg 2025, n=324):</strong> nCR/nCR tiene regrowth del <strong>59.3%</strong> y DFS 68.9% a 5 años vs 89.6% en cCR. Chinese W&W Database (JCO 2024, n=318): regrowth 41.6% vs 16.4% en cCR (p<0.01), OPR 69.2% vs 88%. Sin embargo OS y CSS sin diferencia significativa — cirugía de rescate exitosa en 82%. No hay consenso sobre definición de nCR (Fitzsimmons, ANZ J Surg 2024).',
-        seguimiento:timingSeg.concat(['⚠️ NO iniciar W&W definitivo hasta confirmar cCR en reevaluación','Si hay progresión en cualquier momento → cirugía TME sin demora']),
+        seguimiento:timingSeg.concat(['🔴 nCR ≠ W&W definitivo — es indicación de reevaluación diferida, NO de inicio de W&W','⚠️ NO iniciar protocolo de W&W hasta obtener cCR confirmada en reevaluación','Si hay progresión en cualquier momento → cirugía TME sin demora']),
         mdtPreguntas:['¿Timing de evaluación correcto para el esquema recibido?','¿Reevaluación completa: RMN (3T DWI) + endoscopía + examen clínico?','¿Paciente informado: regrowth 41-59% si persiste nCR en W&W?','¿Equipo con experiencia en W&W?','¿Acceso a seguimiento cada 3 meses garantizado?','¿Consenso MDT explícito antes de no operar?']};
     }
     return {respuesta:'partial',respuestaLabel:'Respuesta Parcial / Evaluación Incompleta',decision:'Completar evaluación o cirugía TME',justificacion:'Datos insuficientes para clasificación confiable o mrTRG 3 con DWI preocupante. Repetir RMN en 4-6 semanas antes de decidir.',seguimiento:['Repetir RMN pelvis con DWI en 4-6 semanas','Si mejora → reevaluar','Si persiste → TME'],mdtPreguntas:['¿Completar evaluación multimodal?','¿Timing correcto (≥8 semanas post-RT)?']};
@@ -1652,7 +1741,7 @@
           '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">'+
             '⚠️ <strong>Este registro se enviará a la base de datos nacional RectalMDT.</strong> Usarlo únicamente para casos reales discutidos en MDT.'+
           '</div>'+
-          '<div class="field"><label>Centro asistencial</label><select id="regCentro"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
+          '<div class="field"><label>Centro asistencial</label><select id="regCentro"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="SMI2026">SMI</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
           '<div class="grid-2">'+
             '<div class="field"><label>Depto. residencia del paciente</label><select id="regDeptoRes">'+deptosOptions()+'</select></div>'+
             '<div class="field"><label>Depto. nacimiento del paciente</label><select id="regDeptoNac">'+deptosOptions()+'</select></div>'+
@@ -1795,7 +1884,7 @@
     });
   }
 
-  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUDNXuFP0fT1GM0Hfe_Klejloe5Ug4U_p2RgSLutKO3dnNe4oLAu21D0qlti7VLUzY9A/exec';
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzI3lOLREz6SShLauGk_VaQZHQjcjdaGvOoogCGbTfKVQGL95VLXq2ACYh-lsmTzKRGOA/exec';
   var DEPARTAMENTOS = ['Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Montevideo','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'];
 
   function deptosOptions(){
@@ -1990,7 +2079,7 @@
           '<div style="background:#fff3cd;border-left:4px solid #e67e22;color:#7d4e00;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem">'+
             '⚠️ <strong>Este registro se enviará a la base de datos nacional RectalMDT.</strong> Usarlo únicamente para casos reales discutidos en MDT.'+
           '</div>'+
-          '<div class="field"><label>Centro asistencial</label><select id="regCentroR"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
+          '<div class="field"><label>Centro asistencial</label><select id="regCentroR"><option value="">Seleccionar centro</option><option value="CLINICAS2026">Hospital de Clínicas</option><option value="MACIEL2026">Hospital Maciel</option><option value="SMI2026">SMI</option><option value="INCA2026">INCA</option><option value="PILOTO2026">Centro Piloto</option></select></div>'+
           '<div class="field"><label>N° de registro del paciente</label><input type="text" id="regVinculadoR" placeholder="Ej: URY-CLINICAS-20260309-0001" /></div>'+
           '<div class="field"><label>¿El MDT decidió lo recomendado por la app?</label>'+
             '<div class="radio-group" id="concordanciaGroupR">'+
@@ -2014,6 +2103,125 @@
         '</div>'
       );
   }
+
+
+  function openFeedbackModal(){
+    var el = document.getElementById('feedbackOverlay');
+    if(el) el.style.display='flex';
+  }
+
+  function closeFeedbackModal(){
+    var el = document.getElementById('feedbackOverlay');
+    if(el) el.style.display='none';
+  }
+
+  function toggleArticuloFields(){
+    var tipoEl = document.getElementById('feedbackTipo');
+    var box = document.getElementById('feedbackArticuloExtra');
+    if(!tipoEl || !box) return;
+    box.style.display = (tipoEl.value==='articulo' ? 'block' : 'none');
+  }
+
+  function enviarFeedback(){
+    var msg = document.getElementById('feedbackMsg');
+    var tipoEl = document.getElementById('feedbackTipo');
+    var btn = document.querySelector('#feedbackOverlay button.btn.btn-primary');
+    if(!msg || !tipoEl) return;
+    var payload = {
+      action: 'feedback',
+      feedbackTipo: tipoEl.value,
+      nombre: (document.getElementById('feedbackNombre').value || '').trim(),
+      email: (document.getElementById('feedbackEmail').value || '').trim(),
+      articuloNombre: document.getElementById('feedbackArticulo') ? (document.getElementById('feedbackArticulo').value || '').trim() : '',
+      articuloDoi: document.getElementById('feedbackDoi') ? (document.getElementById('feedbackDoi').value || '').trim() : '',
+      feedbackMensaje: (document.getElementById('feedbackMensaje').value || '').trim(),
+      registroRelacionado: (typeof currentRegistroNumber !== 'undefined' && currentRegistroNumber) ? currentRegistroNumber : '',
+      contexto: mode || '',
+      pagina: location.href,
+      userAgent: navigator.userAgent || ''
+    };
+
+    if(!payload.feedbackMensaje && payload.feedbackTipo!=='articulo'){
+      msg.innerHTML='<span style="color:#c0392b">⚠️ Escribí un mensaje antes de continuar.</span>';
+      return;
+    }
+    if(payload.feedbackTipo==='articulo' && !payload.articuloNombre && !payload.articuloDoi && !payload.feedbackMensaje){
+      msg.innerHTML='<span style="color:#c0392b">⚠️ Ingresá al menos el nombre del artículo, DOI o un comentario.</span>';
+      return;
+    }
+
+    window.__feedbackPendienteRectalMDT = payload;
+    if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+    msg.innerHTML='<span style="color:#566573">Enviando feedback...</span>';
+
+    fetch(SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(resp){
+      if(resp && resp.ok){
+        msg.innerHTML='<div style="background:#eafaf1;border-left:4px solid #27ae60;padding:12px;border-radius:8px;color:#145a32">✅ Feedback enviado correctamente.</div>';
+        setTimeout(function(){
+          closeFeedbackModal();
+          ['feedbackNombre','feedbackEmail','feedbackArticulo','feedbackDoi','feedbackMensaje'].forEach(function(id){
+            var el = document.getElementById(id);
+            if(el) el.value = '';
+          });
+          var tipo = document.getElementById('feedbackTipo');
+          if(tipo) tipo.value = 'opinion';
+          toggleArticuloFields();
+          if(msg) msg.innerHTML='';
+        }, 1200);
+      } else {
+        msg.innerHTML='<div style="background:#fdecea;border-left:4px solid #c0392b;padding:12px;border-radius:8px;color:#7b241c">❌ No se pudo enviar el feedback: '+ ((resp && resp.error) ? resp.error : 'error desconocido') +'</div>';
+      }
+    })
+    .catch(function(err){
+      msg.innerHTML='<div style="background:#fdecea;border-left:4px solid #c0392b;padding:12px;border-radius:8px;color:#7b241c">❌ Error al enviar feedback: '+ (err && err.message ? err.message : err) +'</div>';
+    })
+    .finally(function(){
+      if(btn){ btn.disabled = false; btn.textContent = 'Enviar feedback'; }
+    });
+  }
+
+  document.addEventListener('click', function(e){
+    var overlay = document.getElementById('feedbackOverlay');
+    if(overlay && e.target === overlay) closeFeedbackModal();
+  });
+
 </script>
+
+<div id="feedbackFab" onclick="openFeedbackModal()" style="position:fixed;right:18px;bottom:18px;z-index:9999;background:#6c4ab6;color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-weight:700;cursor:pointer;font-size:.92rem">✉️ Feedback</div>
+<div id="feedbackOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;align-items:center;justify-content:center;padding:18px">
+  <div style="width:min(680px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px">
+      <div>
+        <div style="font-size:1.1rem;font-weight:800;color:#2c3e50">Enviar feedback</div>
+        <div style="font-size:.84rem;color:#5f6c7b">Opiniones, errores, sugerencias o artículos para RectalMDT. Esta versión es solo de prueba visual y aún no envía datos.</div>
+      </div>
+      <button class="btn btn-secondary" onclick="closeFeedbackModal()">Cerrar</button>
+    </div>
+    <div class="field"><label>Tipo de feedback</label>
+      <select id="feedbackTipo" onchange="toggleArticuloFields()">
+        <option value="opinion">Opinión</option>
+        <option value="error">Error</option>
+        <option value="sugerencia">Sugerencia</option>
+        <option value="articulo">Artículo</option>
+      </select>
+    </div>
+    <div class="field"><label>Nombre</label><input type="text" id="feedbackNombre" placeholder="Opcional" /></div>
+    <div class="field"><label>Email de contacto</label><input type="email" id="feedbackEmail" placeholder="Opcional" /></div>
+    <div id="feedbackArticuloExtra" style="display:none">
+      <div class="field"><label>Nombre del artículo</label><input type="text" id="feedbackArticulo" placeholder="Ej: OPRA trial update" /></div>
+      <div class="field"><label>DOI</label><input type="text" id="feedbackDoi" placeholder="Ej: 10.xxxx/xxxx" /></div>
+    </div>
+    <div class="field"><label>Mensaje</label><textarea id="feedbackMensaje" rows="5" placeholder="Escribí acá tu opinión, error detectado, sugerencia o comentario sobre el artículo..."></textarea></div>
+    <button class="btn btn-primary" style="width:100%" onclick="enviarFeedback()">Enviar feedback</button>
+    <div id="feedbackMsg" style="margin-top:12px;font-size:.85rem"></div>
+  </div>
+</div>
+
 </body>
 </html>
