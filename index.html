@@ -4,6 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RectalMDT</title>
+
+  <!-- PWA: manifest y service worker -->
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- PWA: meta tags específicos de Apple / iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RectalMDT" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="./icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-192.png" />
+
+  <!-- PWA: color de tema para Android -->
+  <meta name="theme-color" content="#1a6bb5" />
   <style>
     :root {
       --primary: #1a6bb5; --primary-dark: #0f4a80; --accent: #e8f4fd;
@@ -166,10 +180,10 @@
     </div>
     <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
     <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px">
-      <a href="./manual.pdf" download="RectalMDT_Manual_Usuario.pdf" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+      <a href="https://trochita.github.io/rectalmdt/manual.pdf" target="_blank" rel="noopener" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
         📖 Manual de uso
       </a>
-      <a href="./algoritmo.pdf" download="RectalMDT_Algoritmo_Decision.pdf" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+      <a href="https://trochita.github.io/rectalmdt/algoritmo.pdf" target="_blank" rel="noopener" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
         📋 Algoritmo de decisión
       </a>
     </div>
@@ -2213,15 +2227,4 @@
     </div>
     <div class="field"><label>Nombre</label><input type="text" id="feedbackNombre" placeholder="Opcional" /></div>
     <div class="field"><label>Email de contacto</label><input type="email" id="feedbackEmail" placeholder="Opcional" /></div>
-    <div id="feedbackArticuloExtra" style="display:none">
-      <div class="field"><label>Nombre del artículo</label><input type="text" id="feedbackArticulo" placeholder="Ej: OPRA trial update" /></div>
-      <div class="field"><label>DOI</label><input type="text" id="feedbackDoi" placeholder="Ej: 10.xxxx/xxxx" /></div>
-    </div>
-    <div class="field"><label>Mensaje</label><textarea id="feedbackMensaje" rows="5" placeholder="Escribí acá tu opinión, error detectado, sugerencia o comentario sobre el artículo..."></textarea></div>
-    <button class="btn btn-primary" style="width:100%" onclick="enviarFeedback()">Enviar feedback</button>
-    <div id="feedbackMsg" style="margin-top:12px;font-size:.85rem"></div>
-  </div>
-</div>
-
-</body>
-</html>
+    <div id="feedbackArticuloExtra" style="display:non
