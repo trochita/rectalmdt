@@ -180,12 +180,12 @@
     </div>
     <div style="text-align:center;margin-top:24px;font-size:0.72rem;color:var(--gray)">Basado en NCCN v1.2026 · ESMO 2025 · RAPIDO · PRODIGE 23 · OPRA · PROSPECT · NEJM 2022/2023</div>
     <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px">
-      <a href="https://trochita.github.io/rectalmdt/manual.pdf" target="_blank" rel="noopener" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+      <button onclick="abrirDoc('https://trochita.github.io/rectalmdt/manual.pdf','Manual de uso')" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
         📖 Manual de uso
-      </a>
-      <a href="https://trochita.github.io/rectalmdt/algoritmo.pdf" target="_blank" rel="noopener" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
+      </button>
+      <button onclick="abrirDoc('https://trochita.github.io/rectalmdt/algoritmo.pdf','Algoritmo de decisión')" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:8px 16px;font-size:0.78rem;color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">
         📋 Algoritmo de decisión
-      </a>
+      </button>
     </div>
   </div>
 
@@ -2205,6 +2205,52 @@
     if(overlay && e.target === overlay) closeFeedbackModal();
   });
 
+  // ── ABRIR DOCUMENTOS (manual / algoritmo) ───────────────────────────────
+  // Funciona en WebView Android, Safari iOS, Chrome y PWA
+  function abrirDoc(url, titulo) {
+    var win = null;
+    try { win = window.open(url, '_blank'); } catch(e) {}
+    if(!win || win.closed || typeof win.closed === 'undefined') {
+      mostrarLinkDoc(url, titulo); return;
+    }
+    setTimeout(function() {
+      try {
+        if(win && win.location && win.location.href === 'about:blank') {
+          win.close(); mostrarLinkDoc(url, titulo);
+        }
+      } catch(e) {}
+    }, 400);
+  }
+
+  function mostrarLinkDoc(url, titulo) {
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML =
+      '<div style="background:white;border-radius:12px;padding:24px 20px;max-width:420px;width:100%">'+
+        '<div style="font-size:1rem;font-weight:700;color:#1a6bb5;margin-bottom:8px">📄 '+titulo+'</div>'+
+        '<p style="font-size:0.85rem;color:#495057;margin-bottom:16px;line-height:1.5">Copiá el link y abrilo en el navegador de tu dispositivo:</p>'+
+        '<div style="background:#f0f4f8;border-radius:8px;padding:10px 12px;font-size:0.75rem;font-family:monospace;color:#1a6bb5;word-break:break-all;margin-bottom:12px">'+url+'</div>'+
+        '<div style="display:flex;gap:8px">'+
+          '<button id="docCopyBtn" style="flex:1;padding:10px;background:#1a6bb5;color:white;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">📋 Copiar link</button>'+
+          '<button id="docCloseBtn" style="padding:10px 16px;background:#f8f9fa;color:#495057;border:1.5px solid #dee2e6;border-radius:8px;font-size:0.85rem;cursor:pointer">Cerrar</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('docCopyBtn').addEventListener('click', function() {
+      var btn = this;
+      if(navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function(){ btn.textContent = '✅ Copiado'; });
+      } else {
+        var t = document.createElement('textarea');
+        t.value = url; document.body.appendChild(t); t.select();
+        document.execCommand('copy'); document.body.removeChild(t);
+        btn.textContent = '✅ Copiado';
+      }
+    });
+    document.getElementById('docCloseBtn').addEventListener('click', function(){ ov.remove(); });
+    ov.addEventListener('click', function(e){ if(e.target === ov) ov.remove(); });
+  }
+
 </script>
 
 <div id="feedbackFab" onclick="openFeedbackModal()" style="position:fixed;right:18px;bottom:18px;z-index:9999;background:#6c4ab6;color:#fff;padding:12px 16px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.18);font-weight:700;cursor:pointer;font-size:.92rem">✉️ Feedback</div>
@@ -2227,4 +2273,15 @@
     </div>
     <div class="field"><label>Nombre</label><input type="text" id="feedbackNombre" placeholder="Opcional" /></div>
     <div class="field"><label>Email de contacto</label><input type="email" id="feedbackEmail" placeholder="Opcional" /></div>
-    <div id="feedbackArticuloExtra" style="display:non
+    <div id="feedbackArticuloExtra" style="display:none">
+      <div class="field"><label>Nombre del artículo</label><input type="text" id="feedbackArticulo" placeholder="Ej: OPRA trial update" /></div>
+      <div class="field"><label>DOI</label><input type="text" id="feedbackDoi" placeholder="Ej: 10.xxxx/xxxx" /></div>
+    </div>
+    <div class="field"><label>Mensaje</label><textarea id="feedbackMensaje" rows="5" placeholder="Escribí acá tu opinión, error detectado, sugerencia o comentario sobre el artículo..."></textarea></div>
+    <button class="btn btn-primary" style="width:100%" onclick="enviarFeedback()">Enviar feedback</button>
+    <div id="feedbackMsg" style="margin-top:12px;font-size:.85rem"></div>
+  </div>
+</div>
+
+</body>
+</html>
